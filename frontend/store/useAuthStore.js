@@ -3,7 +3,7 @@ import { axiosInstance } from "../src/lib/axios";
 import toast from "react-hot-toast";
 import { io } from "socket.io-client";
 
-const baseURL=import.meta.env.MODE === "development" ? "http://localhost:5001" : "/";
+const BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:5001" : "/";
 
 
 export const useAuthStore = create((set, get) => ({
@@ -12,10 +12,9 @@ export const useAuthStore = create((set, get) => ({
   isLoggingIn: false,
   isUpdatingProfile: false,
   isCheckingAuth: true,
-  onlineUsers: [], // Array to store online users
-  socket: null, // Store socket instance
+  onlineUsers: [], 
+  socket: null, 
 
-  // Check if the user is authenticated
   checkAuth: async () => {
     try {
       const res = await axiosInstance.get("/auth/check");
@@ -28,7 +27,6 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  // Sign up a new user
   signup: async (data) => {
     set({ isSigningUp: true });
     try {
@@ -74,7 +72,7 @@ export const useAuthStore = create((set, get) => ({
 // Inside useAuthStore
 updateProfile: async (formData) => {
   try {
-      const res = await axiosInstance.put("/auth/updateProfile", formData, {
+      const res = await axiosInstance.put("/auth/update-profile", formData, {
           headers: {
               "Content-Type": "multipart/form-data", // Ensure proper headers for file uploads
           },

@@ -5,27 +5,28 @@ import { toast } from 'react-hot-toast';
 import avatarPlaceholder from '/avatar.jpg';
 
 const ProfilePage = () => {
-    const { authUser , isUpdatingProfile, updateProfile } = useAuthStore();
+    const { authUser , updateProfile } = useAuthStore();
     const [image, setImage] = useState(null);
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) {
-        toast.error("No file selected.");
-        return;
-    }
 
-    const formData = new FormData();
-    formData.append("profilePic", file);
+    const handleImageUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) {
+            toast.error("No file selected.");
+            return;
+        }
 
-    try {
-        await updateProfile(formData); 
-        setImage(URL.createObjectURL(file));
-        toast.success("Profile picture updated successfully!");
-    } catch (error) {
-        console.error("Error updating profile picture:", error);
-        toast.error("Failed to update profile picture. Please try again.");
-    }
-};
+        const formData = new FormData();
+        formData.append("profilePic", file); // Append the file to FormData
+
+        try {
+            await updateProfile(formData); // Pass the FormData to the store
+            setImage(URL.createObjectURL(file)); // Update local state to show the new image
+            toast.success("Profile picture updated successfully!");
+        } catch (error) {
+            console.error("Error updating profile picture:", error);
+            toast.error("Failed to update profile picture. Please try again.");
+        }
+    };
 
     return (
         <div className="h-screen-200 pt-20 bg-gray-600 dark:bg-gray-900 transition-colors duration-300">
@@ -45,7 +46,7 @@ const ProfilePage = () => {
                             />
                             <label
                                 htmlFor="avatar-upload"
-                                className={`absolute bottom-0 right-0 bg-blue-500 hover:bg-blue-600 p-2 rounded-full cursor-pointer transition-all duration-200 ${isUpdatingProfile ? 'animate-pulse pointer-events-none' : ''}`}
+                                className={`absolute bottom-0 right-0 bg-blue-500 hover:bg-blue-600 p-2 rounded-full cursor-pointer transition-all duration-200`}
                             >
                                 <Camera className="text-white w-6 h-6" />
                                 <input
@@ -54,15 +55,15 @@ const ProfilePage = () => {
                                     className="hidden"
                                     accept="image/*"
                                     onChange={handleImageUpload}
-                                    disabled={isUpdatingProfile}
                                 />
                             </label>
                         </div>
                         <p className="text-sm text-gray-400 dark:text-gray-500">
-                            {isUpdatingProfile ? 'Uploading...' : 'Click the camera to upload your picture'}
+                            Click the camera to upload your picture
                         </p>
                     </div>
 
+                    {/* Profile Information */}
                     <div className="mt-8">
                         <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Account Info</h2>
                         <div className="space-y-4 mt-4">
@@ -77,6 +78,7 @@ const ProfilePage = () => {
                         </div>
                     </div>
 
+                    {/* Additional Information Section */}
                     <div className="mt-6 bg-base-300 dark:bg-gray-700 rounded-xl p-6">
                         <h2 className="text-lg font-medium text-gray-800 dark:text-white mb-4">Account Information</h2>
                         <div className="space-y-3 text-sm">
@@ -86,8 +88,7 @@ const ProfilePage = () => {
                             </div>
                             <div className="flex items-center justify-between py-2">
                                 <span>Account Status</span>
-                                <span className="text-green-500">Active</span>
-                            </div>
+                                <span className="text-green-500">Active</span>                            </div>
                         </div>
                     </div>
                 </div>

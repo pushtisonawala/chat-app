@@ -5,17 +5,17 @@ import { generateToken } from '../lib/utils.js';
 import multer from 'multer';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 
-// Set up Cloudinary storage for multer
-const storage = new CloudinaryStorage({
-  cloudinary,
-  params: {
-    folder: 'user_profiles', // Cloudinary folder where profile images will be stored
-    allowed_formats: ['jpg', 'jpeg', 'png'], // Supported image formats
-  },
-});
-
-const upload = multer({ storage }); // Use Cloudinary storage with multer
-
+// Configure multer for local storage
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, 'uploads/profile_pics'); // Save images to this folder
+    },
+    filename: (req, file, cb) => {
+      cb(null, Date.now() + path.extname(file.originalname)); // Give unique names to files
+    },
+  });
+  
+  const upload = multer({ storage });
 // Sign Up controller
 export const signup = async (req, res) => {
   const { fullName, email, password } = req.body;
@@ -97,20 +97,24 @@ export const logout = (req, res) => {
   }
 };
 
+// Update Profile Controller
 export const updateProfile = async (req, res) => {
     try {
-        const result = await cloudinary.uploader.upload(req.file);
-        
-        // Update user profile with the new image URL
-        const updatedUser = await User.findByIdAndUpdate(
-            req.user._id, 
-            { profilePic: result.secure_url }, 
+        const file = req.file; // Get the uploaded file
+        if (!file) {
+            return res.status(400).json({ message: "No file uploaded." });
+        }
+
+        const updatedUser  = await User.findByIdAndUpdate(
+            req.user._id,
+            { profilePic: file.path }, // Save file path in the database
             { new: true }
         );
 
-        res.status(200).json(updatedUser); // Return the updated user data including the profilePic URL
+        res.status(200).json(updatedUser ); // Return the updated user data including the profilePic URL
     } catch (error) {
-        res.status(500).json({ message: "Failed to update profile" });
+        console.error("Error updating profile picture:", error);
+        res.status(500).json({ message: "Internal server error." });
     }
 };
 
