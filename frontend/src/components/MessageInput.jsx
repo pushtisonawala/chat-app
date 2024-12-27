@@ -4,23 +4,19 @@ import { X, Image, Send } from "lucide-react";
 
 const MessageInput = () => {
     const [text, setText] = useState("");
-    const [imagePreview, setImagePreview] = useState(null);
+    const [imageFile, setImageFile] = useState(null); // Store the file instead of a preview
     const fileInputRef = useRef(null);
     const { sendMessage } = useChatStore();
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            const reader = new FileReader();
-            reader.onload = () => {
-                setImagePreview(reader.result);
-            };
-            reader.readAsDataURL(file);
+            setImageFile(file); // Store the file directly
         }
     };
 
     const removeImage = () => {
-        setImagePreview(null);
+        setImageFile(null);
         if (fileInputRef.current) {
             fileInputRef.current.value = "";
         }
@@ -28,11 +24,18 @@ const MessageInput = () => {
 
     const handleSendMessage = async (e) => {
         e.preventDefault();
-        if (!text && !imagePreview) return;
+        if (!text.trim() && !imageFile) return;
+
+        const formData = new FormData(); // Create a FormData object
+        formData.append("text", text.trim()); // Append the text
+        if (imageFile) {
+            formData.append("image", imageFile); // Append the image file
+        }
+
         try {
-            await sendMessage({ text: text.trim(), image: imagePreview });
+            await sendMessage(formData); // Send the FormData
             setText("");
-            setImagePreview(null);
+            setImageFile(null);
             if (fileInputRef.current) fileInputRef.current.value = "";
         } catch (error) {
             console.error("Failed to send message", error);
@@ -41,11 +44,11 @@ const MessageInput = () => {
 
     return (
         <div className="p-4 w-full">
-            {imagePreview && (
+            {imageFile && (
                 <div className="mb-3 flex items-center gap-2">
                     <div className="relative">
                         <img
-                            src={imagePreview}
+                            src={URL.createObjectURL(imageFile)} // Create a URL for the file
                             alt="Preview"
                             className="w-20 h-20 object-cover rounded-lg border border-zinc-700"
                         />
@@ -77,9 +80,7 @@ const MessageInput = () => {
                     />
                     <button
                         type="button"
-                        className={`hidden sm:flex btn btn-circle ${
-                            imagePreview ? "text-emerald-500" : "text-zinc-400"
-                        }`}
+                        className={`hidden sm:flex btn btn-circle ${imageFile ? "text-emerald-500" : "text-zinc-400"}`}
                         onClick={() => fileInputRef.current?.click()}
                     >
                         <Image size={20} />
@@ -88,7 +89,7 @@ const MessageInput = () => {
                 <button
                     type="submit"
                     className="btn btn-sm btn-circle"
-                    disabled={!text.trim() && !imagePreview}
+                    disabled={!text.trim() && !imageFile}
                 >
                     <Send size={22} />
                 </button>
