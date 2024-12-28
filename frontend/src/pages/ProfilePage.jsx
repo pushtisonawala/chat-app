@@ -16,11 +16,11 @@ const ProfilePage = () => {
         }
 
         const formData = new FormData();
-        formData.append("profilePic", file); // Append the file to FormData
+        formData.append("profilePic", file); 
 
         try {
-            await updateProfile(formData); // Pass the FormData to the store
-            setImage(URL.createObjectURL(file)); // Update local state to show the new image
+            await updateProfile(formData); 
+            setImage(URL.createObjectURL(file)); 
             toast.success("Profile picture updated successfully!");
         } catch (error) {
             console.error("Error updating profile picture:", error);
@@ -63,7 +63,7 @@ const ProfilePage = () => {
                         </p>
                     </div>
 
-                    {/* Profile Information */}
+                   
                     <div className="mt-8">
                         <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Account Info</h2>
                         <div className="space-y-4 mt-4">
@@ -78,7 +78,6 @@ const ProfilePage = () => {
                         </div>
                     </div>
 
-                    {/* Additional Information Section */}
                     <div className="mt-6 bg-base-300 dark:bg-gray-700 rounded-xl p-6">
                         <h2 className="text-lg font-medium text-gray-800 dark:text-white mb-4">Account Information</h2>
                         <div className="space-y-3 text-sm">

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 const SettingsPage = () => {
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light'); // Set initial theme from localStorage
+  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light'); 
 
   const themes = [
     "light", "dark", "cupcake", "retro", "business", "coffee",  "dracula", 
@@ -11,8 +11,8 @@ const SettingsPage = () => {
   ];
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme); // Apply the selected theme to the entire app
-    localStorage.setItem('theme', theme); // Store theme in localStorage
+    document.documentElement.setAttribute('data-theme', theme); 
+    localStorage.setItem('theme', theme); 
   }, [theme]);
 
   const handleThemeChange = (selectedTheme) => {

@@ -6,11 +6,10 @@ import { useAuthStore } from './useAuthStore';
 export const useChatStore = create((set, get) => ({
   messages: [],
   users: [],
-  selectedUser: null, // Fixed the initialization of selectedUser to null
+  selectedUser: null, 
   isUsersLoading: false,
   isMessagesLoading: false,
 
-  // Fetch users for messaging
   getUsers: async () => {
     set({ isUsersLoading: true });
     try {
@@ -23,7 +22,6 @@ export const useChatStore = create((set, get) => ({
     }
   },
 
-  // Get messages for the selected user
   getMessages: async (userId) => {
     set({ isMessagesLoading: true });
     try {
@@ -35,7 +33,6 @@ export const useChatStore = create((set, get) => ({
       set({ isMessagesLoading: false });
     }
   },
-// Send a new message
 sendMessage: async (messageData) => {
   const { selectedUser , messages } = get();
   try {
@@ -54,7 +51,6 @@ sendMessage: async (messageData) => {
       toast.error(error.response?.data?.message || "Failed to send message");
   }
 },
-  // Subscribe to new messages
   subscribeToMessages: () => {
     const { selectedUser } = get();
     if (!selectedUser) return;
@@ -71,19 +67,15 @@ sendMessage: async (messageData) => {
     });
   },
 
-  // Unsubscribe from new messages
   unsubscribeFromMessages: () => {
     const socket = useAuthStore.getState().socket;
     if (socket) {
       socket.off("newMessage");
     }
   },
-
-  // Set the selected user
   setSelectedUser: (selectedUser) => {
     set({ selectedUser });
-    get().subscribeToMessages(); // Automatically subscribe when a user is selected
+    get().subscribeToMessages();
   },
-  // Set the selected user
   setSelectedUser: (selectedUser) => set({ selectedUser }), // Fixed the function name and syntax
 }));

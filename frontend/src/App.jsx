@@ -20,7 +20,7 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    checkAuth(); // Check authentication status when the app loads
+    checkAuth(); 
   }, [checkAuth]);
 
   if (isCheckingAuth) {
@@ -33,23 +33,23 @@ const App = () => {
 
   return (
     <div>
-      {/* Navbar is always displayed */}
+     
       <Navbar />
 
       <Routes>
-        {/* HomePage is accessible only if the user is logged in */}
+        
         <Route path="/" element={authUser ? <HomePage /> : <Navigate to="/login" />} />
         
-        {/* SignUpPage is accessible only if the user is not logged in */}
+      
         <Route path="/signup" element={authUser ? <Navigate to="/" /> : <SignUpPage />} />
         
-        {/* LoginPage is accessible only if the user is not logged in */}
+        
         <Route path="/login" element={authUser ? <Navigate to="/" /> : <LoginPage />} />
         
-        {/* SettingsPage is accessible only if the user is authenticated */}
+       
         <Route path="/settings" element={authUser ? <SettingsPage /> : <Navigate to="/login" />} />
         
-        {/* ProfilePage is accessible only if the user is authenticated */}
+       
         <Route path="/profile" element={authUser ? <ProfilePage /> : <Navigate to="/login" />} />
       </Routes>
 

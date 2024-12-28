@@ -1,4 +1,4 @@
-//login pg
+
 import React, { useState } from 'react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { MessageSquare, Mail, Lock, Eye } from 'lucide-react';
@@ -39,14 +39,14 @@ const LoginPage = () => {
         e.preventDefault();
         const isValid = validateForm();
         if (isValid) {
-            console.log("Login Data before submitting:", formData); // Debugging log
+            console.log("Login Data before submitting:", formData); 
             login(formData);
         }
     };
 
     return (
         <div className='min-h-screen bg-gray-800 text-gray-200 grid lg:grid-cols-2'>
-            {/* Left Column: Login Form */}
+            
             <div className='flex flex-col justify-center items-center p-6 sm:p-12 mt-10'>
                 <div className='w-full max-w-md space-y-8'>
                     <div className='text-center mb-8'>
@@ -59,7 +59,6 @@ const LoginPage = () => {
                         </div>
                     </div>
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* Email */}
                         <div className='relative'>
                             <label className='label p-2'>
                                 <span className='text-base label-text text-gray-300'>Email</span>
@@ -76,7 +75,6 @@ const LoginPage = () => {
                             </div>
                         </div>
 
-                        {/* Password */}
                         <div className='relative'>
                             <label className='label'>
                                 <span className='text-base label-text text-gray-300'>Password</span>
@@ -113,7 +111,6 @@ const LoginPage = () => {
                 </div>
             </div>
 
-            {/* Right Column: AuthImagePattern */}
             <AuthImagePattern 
                 title="Welcome Back to Chatterly" 
                 subtitle="Stay connected with your friends and the community." 

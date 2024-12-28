@@ -41,7 +41,6 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  // Log in a user
   login: async (data) => {
     set({ isLoggingIn: true });
     try {
@@ -57,28 +56,25 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  // Log out a user
   logout: async () => {
     try {
       await axiosInstance.post("/auth/logout");
       set({ authUser: null });
       toast.success("Logged out successfully");
-      get().disconnectSocket(); // Disconnect the socket on logout
+      get().disconnectSocket(); 
     } catch (error) {
       console.error("Error during logout:", error);
       toast.error(error.response?.data?.message || "Logout failed.");
     }
-  },// Inside useAuthStore
-// Inside useAuthStore
+  },
+
 updateProfile: async (formData) => {
   try {
       const res = await axiosInstance.put("/auth/update-profile", formData, {
           headers: {
-              "Content-Type": "multipart/form-data", // Ensure proper headers for file uploads
+              "Content-Type": "multipart/form-data", 
           },
       });
-
-      // Update the authUser profilePic after the backend call
       set({ authUser: { ...get().authUser, profilePic: res.data.profilePic } });
       toast.success("Profile picture updated successfully!");
   } catch (error) {
@@ -86,14 +82,13 @@ updateProfile: async (formData) => {
   }
 },
 
-  // Connect to Socket.IO
   connectSocket: () => {
     const { authUser } = get();
     if (!authUser || get().socket?.connected) return;
 
     const socket = io(BASE_URL, {
-      transports: ["websocket"], // Use WebSocket transport
-      query: { userId: authUser._id }, // Send userId to server for mapping
+      transports: ["websocket"], 
+      query: { userId: authUser._id }, 
     });
 
     socket.on("connect", () => {
@@ -104,13 +99,11 @@ updateProfile: async (formData) => {
       console.log("Socket disconnected:", socket.id);
     });
 
-    // Receive online users from the server
     socket.on("getOnlineUsers", (userIds) => {
-      console.log("Received online users:", userIds); // Debug log
+      console.log("Received online users:", userIds); 
       set({ onlineUsers: userIds });
     });
 
-    // Handle connection error
     socket.on("connect_error", (err) => {
       console.error("Socket connection error:", err.message);
     });
@@ -118,13 +111,12 @@ updateProfile: async (formData) => {
     set({ socket });
   },
 
-  // Disconnect from Socket.IO
   disconnectSocket: () => {
     const { socket } = get();
     if (socket) {
       socket.disconnect();
       console.log("Socket disconnected.");
-      set({ socket: null }); // Clear the socket instance
+      set({ socket: null }); 
     }
   },
 }));

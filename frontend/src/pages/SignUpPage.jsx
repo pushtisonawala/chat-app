@@ -51,14 +51,14 @@ const SignUpPage = () => {
         e.preventDefault();
         const isValid = validateForm();
         if (isValid) {
-            console.log("Form Data before submitting:", formData); // Debugging log
+            console.log("Form Data before submitting:", formData); 
             signup(formData);
         }
     };
 
     return (
         <div className='min-h-screen bg-gray-800 text-gray-200 grid lg:grid-cols-2'>
-            {/* Left Column: Sign-Up Form */}
+           
             <div className='flex flex-col justify-center items-center p-6 sm:p-12 mt-10'>
                 <div className='w-full max-w-md space-y-8'>
                     <div className='text-center mb-8'>
@@ -71,7 +71,7 @@ const SignUpPage = () => {
                         </div>
                     </div>
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* Full Name */}
+                     
                         <div className='relative'>
                             <label className='label p-2'>
                                 <span className='text-base label-text text-gray-300'>Full Name</span>
@@ -88,7 +88,6 @@ const SignUpPage = () => {
                             </div>
                         </div>
 
-                        {/* Email */}
                         <div className='relative'>
                             <label className='label p-2'>
                                 <span className='text-base label-text text-gray-300'>Email</span>
@@ -105,7 +104,6 @@ const SignUpPage = () => {
                             </div>
                         </div>
 
-                        {/* Password */}
                         <div className='relative'>
                             <label className='label'>
                                 <span className='text-base label-text text-gray-300'>Password</span>
@@ -142,7 +140,6 @@ const SignUpPage = () => {
                 </div>
             </div>
 
-            {/* Right Column: AuthImagePattern */}
             <AuthImagePattern 
                 title="Join Our Community" 
                 subtitle="Connect with friends, share moments, and stay in touch." 
