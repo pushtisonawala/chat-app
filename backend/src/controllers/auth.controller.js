@@ -59,26 +59,34 @@ export const signup = async (req, res) => {
 
 // Login controller
 export const login = async (req, res) => {
-  const { email, password } = req.body;
-
   try {
+    const { email, password } = req.body;
     const user = await User.findOne({ email });
-    if (!user) {
+    
+    if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(400).json({ message: "Invalid credentials." });
     }
 
-    const isPasswordCorrect = await bcrypt.compare(password, user.password);
-    if (!isPasswordCorrect) {
-      return res.status(400).json({ message: "Invalid credentials." });
-    }
+    // Generate JWT token
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+      expiresIn: '7d'
+    });
 
-    generateToken(user._id, res);
+    // Set HTTP-only cookie
+    res.cookie("jwt", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
 
+    // Send response with token
     res.status(200).json({
       _id: user._id,
       fullName: user.fullName,
       email: user.email,
-      profilePic: user.profilePic, // Send profile picture URL
+      profilePic: user.profilePic,
+      token: token // Include token in response
     });
   } catch (error) {
     console.error("Error in login controller:", error.message);
@@ -126,5 +134,32 @@ export const checkAuth = (req, res) => {
   } catch (error) {
     console.error("Error in checkAuth controller:", error.message);
     res.status(500).json({ message: "Internal server error." });
+  }
+};
+// Fetch all users
+export const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find()
+      .select('_id fullName email profilePic') // Include only necessary fields
+      .lean();
+
+    console.log('Users from DB:', users); // Debug log
+
+    if (!users || !Array.isArray(users)) {
+      return res.status(500).json({ error: 'No users found' });
+    }
+
+    const formattedUsers = users.map(user => ({
+      _id: user._id,
+      fullName: user.fullName || 'Unknown User',
+      email: user.email,
+      profilePic: user.profilePic || '/avatar.jpg'
+    }));
+
+    console.log('Sending formatted users:', formattedUsers); // Debug log
+    res.status(200).json(formattedUsers);
+  } catch (error) {
+    console.error('Error in getAllUsers:', error);
+    res.status(500).json({ error: 'Failed to fetch users' });
   }
 };

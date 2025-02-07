@@ -4,7 +4,7 @@ import { protectRoute } from '../middleware/auth.middleware.js';
 import multer from 'multer';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import cloudinary from '../lib/cloudinary.js'; // Import the Cloudinary configuration
-
+import { getAllUsers } from '../controllers/auth.controller.js';
 // Configure CloudinaryStorage for Multer
 const storage = new CloudinaryStorage({
   cloudinary,
@@ -27,5 +27,6 @@ router.post('/logout', logout);
 router.put('/update-profile', protectRoute, upload.single('profilePic'), updateProfile);
 
 router.get('/check', protectRoute, checkAuth);
-
+// Fetch all users
+router.get('/users', protectRoute, getAllUsers);
 export default router;
