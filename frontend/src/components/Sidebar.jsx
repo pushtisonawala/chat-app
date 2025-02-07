@@ -1,45 +1,109 @@
 import { useEffect } from "react";
 import { useChatStore } from "../../store/useChatStore";
-import SidebarSkeleton from "./skeletons/SidebarSkeleton";
-import { Users } from 'lucide-react';
+import { useGroupStore } from "../store/useGroupStore";
+import { Users, UserCircle, UsersRound } from 'lucide-react';
 import { useAuthStore } from "../../store/useAuthStore";
+import {SidebarSkeleton} from "./skeletons/SidebarSkeleton";
 
 const Sidebar = () => {
-    const { getUsers, users, selectedUser , setSelectedUser , isUsersLoading } = useChatStore();
+    const { getUsers, users, selectedUser, setSelectedUser, isUsersLoading } = useChatStore();
+    const { groups, fetchGroups, selectedGroup, setSelectedGroup } = useGroupStore();
     const { onlineUsers } = useAuthStore();
 
     useEffect(() => {
         getUsers();
-    }, [getUsers]);
+        fetchGroups();
+    }, [getUsers, fetchGroups]);
+
+    const handleUserSelect = (user) => {
+        setSelectedUser(user);
+        setSelectedGroup(null);
+    };
+
+    const handleGroupSelect = (group) => {
+        setSelectedGroup(group);
+        setSelectedUser(null);
+    };
 
     if (isUsersLoading) return <SidebarSkeleton />;
 
     return (
-        <aside className="h-full w-20 lg:w-72 border-r border-base-300 flex flex-col transition-all duration-200">
-            <div className="border-b border-base-300 w-full p-5">
+        <aside className="h-full w-20 lg:w-72 border-r border-zinc-800 flex flex-col bg-zinc-900">
+            {/* Header */}
+            <div className="border-b border-zinc-800 w-full p-5">
                 <div className="flex items-center gap-2">
-                    <Users className="size-6" />
-                    <span className="font-medium hidden lg:block">Contacts</span>
+                    <Users className="size-6 text-zinc-400" />
+                    <span className="font-medium hidden lg:block text-zinc-300">Chats</span>
                 </div>
             </div>
-            <div className="overflow-y-auto w-full py-3 flex-1"> {/* Allow scrolling */}
-                {users.map((user) => (
-                    <button key={user._id} onClick={() => setSelectedUser (user)}
-                        className={`w-full p-3 flex items-center gap-3 hover:bg-base-300 transition-colors ${selectedUser  ?._id === user._id ? "bg-base-300 ring-1 ring-base-300" : ""}`}>
-                        <div className="relative mx-auto lg:mx-0">
-                            <img src={user.profilePic || "/avatar.jpg"} alt={user.fullName} className="size-12 object-cover rounded-full" />
-                            {onlineUsers.includes(user._id) && (
-                                <span className="absolute bottom-0 right-0 size-3 bg-green-500 rounded-full ring-2 ring-zinc-900" />
-                            )}
+
+            {/* Scrollable Container */}
+            <div className="overflow-y-auto flex-1 py-4">
+                {/* Groups Section */}
+                <div className="space-y-4">
+                    <div className="px-4">
+                        <div className="flex items-center gap-2">
+                            <UsersRound className="size-4 text-zinc-400" />
+                            <span className="text-sm font-medium hidden lg:block text-zinc-400">Groups</span>
                         </div>
-                        <div className="hidden lg:block text-left min-w-0">
-                            <div className="font-medium truncate">{user.fullName}</div>
-                            <div className="text-sm text-zinc-400">
-                                {onlineUsers.includes(user._id) ? "Online" : "Offline"}
-                            </div>
+                    </div>
+                    <div className="space-y-1 px-2">
+                        {groups.map((group) => (
+                            <button
+                                key={group._id}
+                                onClick={() => handleGroupSelect(group)}
+                                className={`w-full p-2 flex items-center gap-2 rounded-lg hover:bg-zinc-800/50 transition-colors ${
+                                    selectedGroup?._id === group._id ? "bg-zinc-800" : ""
+                                }`}
+                            >
+                                <div className="relative mx-auto lg:mx-0">
+                                    <div className="size-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                                        <UsersRound className="size-6 text-blue-400" />
+                                    </div>
+                                </div>
+                                <span className="hidden lg:block truncate text-zinc-300">{group.name}</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Users Section */}
+                <div className="space-y-4 mt-8">
+                    <div className="px-4">
+                        <div className="flex items-center gap-2">
+                            <UserCircle className="size-4 text-zinc-400" />
+                            <span className="text-sm font-medium hidden lg:block text-zinc-400">Direct Messages</span>
                         </div>
-                    </button>
-                ))}
+                    </div>
+                    <div className="space-y-1 px-2">
+                        {users.map((user) => (
+                            <button 
+                                key={user._id} 
+                                onClick={() => handleUserSelect(user)}
+                                className={`w-full p-2 flex items-center gap-3 rounded-lg hover:bg-zinc-800/50 transition-colors ${
+                                    selectedUser?._id === user._id ? "bg-zinc-800" : ""
+                                }`}
+                            >
+                                <div className="relative mx-auto lg:mx-0">
+                                    <img 
+                                        src={user.profilePic || "/avatar.jpg"} 
+                                        alt={user.fullName} 
+                                        className="size-10 object-cover rounded-full border border-zinc-800"
+                                    />
+                                    {onlineUsers.includes(user._id) && (
+                                        <span className="absolute bottom-0 right-0 size-2.5 bg-green-500 rounded-full ring-2 ring-zinc-900" />
+                                    )}
+                                </div>
+                                <div className="hidden lg:block text-left min-w-0">
+                                    <div className="font-medium truncate text-zinc-300">{user.fullName}</div>
+                                    <div className="text-sm text-zinc-500">
+                                        {onlineUsers.includes(user._id) ? "Online" : "Offline"}
+                                    </div>
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+                </div>
             </div>
         </aside>
     );

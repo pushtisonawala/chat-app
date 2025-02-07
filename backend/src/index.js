@@ -7,6 +7,7 @@ import { connectDB } from "./lib/db.js";
 import { app, server } from "./lib/socket.js";
 import messageRoutes from "./routes/message.route.js";
 import path from "path";
+import groupRouter from './routes/group.route.js'; // ✅ Correct import
 
 dotenv.config();
 const _dirname = path.resolve();
@@ -22,6 +23,7 @@ app.use(cors({
 
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
+app.use("/api/groups", groupRouter); // ✅ Ensure this is correctly used
 
 const PORT = process.env.PORT || 5000;
 

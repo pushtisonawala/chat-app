@@ -2,12 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { axiosInstance } from '../lib/axios';
 import toast from 'react-hot-toast';
 import { X, Users, Search, UserPlus } from 'lucide-react';
+import { useGroupStore } from '../store/useGroupStore';
 
 const CreateGroupModal = ({ isOpen, onClose }) => {
   const [groupName, setGroupName] = useState('');
   const [users, setUsers] = useState([]); // Initialize as empty array
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [loading, setLoading] = useState(true); // Start with loading true
+
+  const { createGroup } = useGroupStore();
 
   useEffect(() => {
     let isMounted = true;
@@ -16,9 +19,14 @@ const CreateGroupModal = ({ isOpen, onClose }) => {
       if (!isOpen) return;
       setLoading(true);
       try {
+        // Updated endpoint to remove /api prefix
         const { data } = await axiosInstance.get('/auth/users');
+        console.log('Fetched users:', data);
         if (isMounted && Array.isArray(data)) {
           setUsers(data);
+        } else {
+          setUsers([]);
+          console.error('Invalid users data:', data);
         }
       } catch (error) {
         console.error('Error fetching users:', error);
@@ -46,17 +54,15 @@ const CreateGroupModal = ({ isOpen, onClose }) => {
       return;
     }
 
-    try {
-      await axiosInstance.post('/groups', {
-        name: groupName,
-        members: selectedUsers
-      });
-      toast.success('Group created successfully');
+    const success = await createGroup({
+      name: groupName,
+      members: selectedUsers
+    });
+
+    if (success) {
       setGroupName('');
       setSelectedUsers([]);
       onClose();
-    } catch (error) {
-      toast.error('Failed to create group');
     }
   };
 

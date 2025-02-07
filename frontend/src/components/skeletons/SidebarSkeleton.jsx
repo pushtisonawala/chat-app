@@ -1,6 +1,6 @@
 import { Users } from "lucide-react";
 
-const SidebarSkeleton = () => {
+export const SidebarSkeleton = () => {
   const skeletonContacts = Array(8).fill(null);
   
   return (
