@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { axiosInstance } from '../lib/axios';
 import toast from 'react-hot-toast';
 import { X, Users, Search, UserPlus } from 'lucide-react';
-import { useGroupStore } from '../store/useGroupStore';
+import { useGroupStore } from '../../store/useGroupStore';
 
 const CreateGroupModal = ({ isOpen, onClose }) => {
   const [groupName, setGroupName] = useState('');
