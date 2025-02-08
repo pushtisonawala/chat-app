@@ -1,12 +1,14 @@
 import { useState, useRef } from "react";
 import { useChatStore } from "../../store/useChatStore";
+import { useGroupStore } from "../../store/useGroupStore";
 import { X, Image, Send } from "lucide-react";
 
-const MessageInput = () => {
+const MessageInput = ({ isGroup }) => {
     const [text, setText] = useState("");
     const [imageFile, setImageFile] = useState(null); // Store the file instead of a preview
     const fileInputRef = useRef(null);
     const { sendMessage } = useChatStore();
+    const { sendGroupMessage } = useGroupStore();
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
@@ -33,7 +35,11 @@ const MessageInput = () => {
         }
 
         try {
-            await sendMessage(formData); // Send the FormData
+            if (isGroup) {
+                await sendGroupMessage(formData);
+            } else {
+                await sendMessage(formData);
+            }
             setText("");
             setImageFile(null);
             if (fileInputRef.current) fileInputRef.current.value = "";
@@ -67,7 +73,7 @@ const MessageInput = () => {
                     <input
                         type="text"
                         className="w-full input input-bordered rounded-lg input-sm sm:input-md"
-                        placeholder="Type a message..."
+                        placeholder={`Type a ${isGroup ? 'group' : ''} message...`}
                         value={text}
                         onChange={(e) => setText(e.target.value)}
                     />

@@ -1,5 +1,6 @@
-import { useEffect, useRef } from "react"; // Added useRef import
+import { useEffect, useRef } from "react";
 import { useChatStore } from "../../store/useChatStore";
+import { useGroupStore } from "../../store/useGroupStore";
 import { useAuthStore } from "../../store/useAuthStore";
 import ChatHeader from "./ChatHeader";
 import MessageSkeleton from "./skeletons/MessageSkeleton";
@@ -7,24 +8,30 @@ import MessageInput from "./MessageInput";
 import { formatMessageTime } from "../lib/utils";
 
 const ChatContainer = () => {
-  const { messages, getMessages, isMessagesLoading, selectedUser, subscribeToMessages, unsubscribeFromMessages } = useChatStore();
+  const { messages: privateMessages, selectedUser, getMessages, isMessagesLoading, subscribeToMessages, unsubscribeFromMessages } = useChatStore();
+  const { messages: groupMessages, selectedGroup, fetchGroupMessages } = useGroupStore();
   const { authUser } = useAuthStore();
-  const messageEndRef = useRef(null); // Initialize the ref
+  const messageEndRef = useRef(null);
   const socket = useAuthStore(state => state.socket);
+
+  const messages = selectedUser ? privateMessages : groupMessages;
+  const currentChat = selectedUser || selectedGroup;
 
   useEffect(() => {
     if (selectedUser?._id) {
       getMessages(selectedUser._id);
 
       if (socket) {
-        subscribeToMessages(); // Subscribe only if socket is available
+        subscribeToMessages();
       } else {
         console.error("Socket is not connected.");
       }
 
-      return () => unsubscribeFromMessages(); // Cleanup on unmount
+      return () => unsubscribeFromMessages();
+    } else if (selectedGroup?._id) {
+      fetchGroupMessages(selectedGroup._id);
     }
-  }, [selectedUser?._id, getMessages, subscribeToMessages, unsubscribeFromMessages, socket]);
+  }, [selectedUser?._id, selectedGroup?._id, getMessages, fetchGroupMessages, subscribeToMessages, unsubscribeFromMessages, socket]);
 
   useEffect(() => {
     if (messageEndRef.current && messages) {
@@ -34,7 +41,6 @@ const ChatContainer = () => {
 
   useEffect(() => {
     if (!socket) {
-      // Make sure socket is connected before using it
       console.log('Initializing socket...');
       useAuthStore.getState().connectSocket();
     }
@@ -50,7 +56,7 @@ const ChatContainer = () => {
     );
   }
 
-  if (!selectedUser) {
+  if (!currentChat) {
     return (
       <div className="flex-1 flex flex-col overflow-auto">
         <ChatHeader />
@@ -63,16 +69,16 @@ const ChatContainer = () => {
     <div className="flex-1 flex flex-col overflow-auto">
       <ChatHeader />
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message) => (
+        {messages?.map((message) => (
           <div
             key={message._id}
             className={`chat ${message.senderId === authUser._id ? "chat-end" : "chat-start"}`}
-            ref={messageEndRef} // This will scroll to the last message
+            ref={messageEndRef}
           >
             <div className="chat-image avatar">
               <div className="size-10 rounded-full border">
                 <img
-                  src={message.senderId === authUser._id ? authUser.profilePic || "/avatar.jpg" : selectedUser.profilePic || "/avatar.jpg"}
+                  src={message.senderId === authUser._id ? authUser.profilePic || "/avatar.jpg" : selectedUser?.profilePic || selectedGroup?.profilePic || "/avatar.jpg"}
                   alt="profile pic"
                 />
               </div>
@@ -95,7 +101,7 @@ const ChatContainer = () => {
           </div>
         ))}
       </div>
-      <MessageInput />
+      <MessageInput isGroup={!!selectedGroup} />
     </div>
   );
 };

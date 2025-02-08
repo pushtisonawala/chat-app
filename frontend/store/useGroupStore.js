@@ -7,8 +7,9 @@ export const useGroupStore = create((set) => ({
   selectedGroup: null,
   loading: false,
   error: null,
+  messages: [],
 
-  setSelectedGroup: (group) => set({ selectedGroup: group }),
+  setSelectedGroup: (group) => set({ selectedGroup: group, messages: [] }),
 
   fetchGroups: async () => {
     set({ loading: true });
@@ -36,6 +37,30 @@ export const useGroupStore = create((set) => ({
       console.error('Error creating group:', error);
       toast.error('Failed to create group');
       return false;
+    }
+  },
+
+  sendGroupMessage: async (groupId, message) => {
+    try {
+      const { data } = await axiosInstance.post(`/messages/group/${groupId}`, { message });
+      set(state => ({
+        messages: [...state.messages, data]
+      }));
+      return data;
+    } catch (error) {
+      toast.error('Failed to send message');
+      console.error(error);
+    }
+  },
+
+  fetchGroupMessages: async (groupId) => {
+    try {
+      const { data } = await axiosInstance.get(`/messages/group/${groupId}`);
+      set({ messages: data });
+    } catch (error) {
+      toast.error('Failed to fetch messages');
+      console.error(error);
+      set({ messages: [] });
     }
   }
 }));
