@@ -7,12 +7,11 @@ import MessageSkeleton from "./skeletons/MessageSkeleton";
 import MessageInput from "./MessageInput";
 import { formatMessageTime } from "../lib/utils";
 
-const ChatContainer = () => {
+const ChatContainer = ({ isGroup }) => {
   const { messages: privateMessages, selectedUser, getMessages, isMessagesLoading, subscribeToMessages, unsubscribeFromMessages } = useChatStore();
-  const { messages: groupMessages, selectedGroup, fetchGroupMessages } = useGroupStore();
-  const { authUser } = useAuthStore();
+  const { messages: groupMessages, selectedGroup, fetchGroupMessages, handleNewMessage } = useGroupStore();
+  const { authUser, socket } = useAuthStore();
   const messageEndRef = useRef(null);
-  const socket = useAuthStore(state => state.socket);
 
   const messages = selectedUser ? privateMessages : groupMessages;
   const currentChat = selectedUser || selectedGroup;
@@ -46,6 +45,28 @@ const ChatContainer = () => {
     }
   }, [socket]);
 
+  useEffect(() => {
+    if (isGroup && selectedGroup && socket) {
+      // Join the group room when selected
+      socket.emit('joinGroup', selectedGroup._id);
+
+      // Listen for new messages
+      socket.on('newGroupMessage', handleNewMessage);
+
+      return () => {
+        // Leave the group room when deselected
+        socket.emit('leaveGroup', selectedGroup._id);
+        socket.off('newGroupMessage');
+      };
+    }
+  }, [selectedGroup, socket, isGroup]);
+
+  useEffect(() => {
+    if (isGroup && selectedGroup?._id) {
+      fetchGroupMessages(selectedGroup._id);
+    }
+  }, [selectedGroup?._id]);
+
   if (isMessagesLoading) {
     return (
       <div className="flex-1 flex flex-col overflow-auto">
@@ -72,18 +93,28 @@ const ChatContainer = () => {
         {messages?.map((message) => (
           <div
             key={message._id}
-            className={`chat ${message.senderId === authUser._id ? "chat-end" : "chat-start"}`}
+            className={`chat ${message.senderId._id === authUser._id ? "chat-end" : "chat-start"}`}
             ref={messageEndRef}
           >
             <div className="chat-image avatar">
               <div className="size-10 rounded-full border">
                 <img
-                  src={message.senderId === authUser._id ? authUser.profilePic || "/avatar.jpg" : selectedUser?.profilePic || selectedGroup?.profilePic || "/avatar.jpg"}
+                  src={message.senderId._id === authUser._id 
+                    ? authUser.profilePic || "/avatar.jpg" 
+                    : message.senderId.profilePic || "/avatar.jpg"}
                   alt="profile pic"
                 />
               </div>
             </div>
             <div className="chat-header mb-1">
+              {/* Add sender name for group messages */}
+              {isGroup && (
+                <span className="font-bold mr-2">
+                  {message.senderId._id === authUser._id 
+                    ? "You"
+                    : message.senderId.fullName}
+                </span>
+              )}
               <time className="text-xs opacity-50 ml-1">
                 {formatMessageTime(message.createdAt)}
               </time>

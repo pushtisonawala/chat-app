@@ -33,6 +33,17 @@ io.on("connection", (socket) => {
   if (userId) {
     userSocketMap[userId] = socket.id;
     io.emit("getOnlineUsers", Object.keys(userSocketMap)); // Emit online users to all clients
+
+    // Join user to their group rooms
+    socket.on("joinGroup", (groupId) => {
+      socket.join(`group_${groupId}`);
+      console.log(`User ${userId} joined group ${groupId}`);
+    });
+
+    socket.on("leaveGroup", (groupId) => {
+      socket.leave(`group_${groupId}`);
+      console.log(`User ${userId} left group ${groupId}`);
+    });
   }
 
   // When a user disconnects, remove them from the map and notify others

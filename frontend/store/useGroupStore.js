@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { axiosInstance } from '../src/lib/axios';
 import toast from 'react-hot-toast';
 
-export const useGroupStore = create((set) => ({
+export const useGroupStore = create((set, get) => ({
   groups: [],
   selectedGroup: null,
   loading: false,
@@ -40,6 +40,8 @@ export const useGroupStore = create((set) => ({
     }
   },
 
+  setMessages: (messages) => set({ messages }),
+
   sendGroupMessage: async (groupId, text) => {
     try {
       if (!groupId || !text) {
@@ -56,6 +58,7 @@ export const useGroupStore = create((set) => ({
         }
       );
 
+      // Update messages immediately
       set(state => ({
         messages: [...state.messages, data]
       }));
@@ -63,6 +66,13 @@ export const useGroupStore = create((set) => ({
     } catch (error) {
       console.error('Error sending group message:', error);
       throw error;
+    }
+  },
+
+  handleNewMessage: (message) => {
+    const { selectedGroup, messages } = get();
+    if (selectedGroup && message.groupId === selectedGroup._id) {
+      set({ messages: [...messages, message] });
     }
   },
 
