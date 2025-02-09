@@ -93,31 +93,31 @@ const ChatContainer = ({ isGroup }) => {
         {messages?.map((message) => (
           <div
             key={message._id}
-            className={`chat ${message.senderId._id === authUser._id ? "chat-end" : "chat-start"}`}
+            className={`chat ${message.senderId?._id === authUser._id ? "chat-end" : "chat-start"}`}
             ref={messageEndRef}
           >
             <div className="chat-image avatar">
               <div className="size-10 rounded-full border">
                 <img
-                  src={message.senderId._id === authUser._id 
+                  src={message.senderId?._id === authUser._id 
                     ? authUser.profilePic || "/avatar.jpg" 
-                    : message.senderId.profilePic || "/avatar.jpg"}
+                    : message.senderId?.profilePic || "/avatar.jpg"}
                   alt="profile pic"
                 />
               </div>
             </div>
-            <div className="chat-header mb-1">
-              {/* Add sender name for group messages */}
-              {isGroup && (
-                <span className="font-bold mr-2">
-                  {message.senderId._id === authUser._id 
+            <div className="chat-header">
+              {/* Updated sender name display */}
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-sm">
+                  {message.senderId?._id === authUser._id 
                     ? "You"
-                    : message.senderId.fullName}
+                    : message.senderId?.fullName}
                 </span>
-              )}
-              <time className="text-xs opacity-50 ml-1">
-                {formatMessageTime(message.createdAt)}
-              </time>
+                <time className="text-xs opacity-50">
+                  {formatMessageTime(message.createdAt)}
+                </time>
+              </div>
             </div>
             <div className="chat-bubble flex flex-col">
               {message.image && (
@@ -127,7 +127,7 @@ const ChatContainer = ({ isGroup }) => {
                   className="sm:max-w-[200px] rounded-md mb-2"
                 />
               )}
-              {message.text && <p>{message.text}</p>}
+              <p>{message.text}</p>
             </div>
           </div>
         ))}
