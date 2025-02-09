@@ -17,13 +17,20 @@ export const useAuthStore = create((set, get) => ({
 
   checkAuth: async () => {
     try {
-      const res = await axiosInstance.get("/auth/check");
-      set({ authUser: res.data });
+      const token = localStorage.getItem('jwt-token');
+      if (!token) {
+        set({ authUser: null, isCheckingAuth: false });
+        return;
+      }
+
+      const res = await axiosInstance.get("/auth/check", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      set({ authUser: res.data, isCheckingAuth: false });
     } catch (error) {
       console.error("Error in checkAuth:", error);
-      set({ authUser: null });
-    } finally {
-      set({ isCheckingAuth: false });
+      localStorage.removeItem('jwt-token');
+      set({ authUser: null, isCheckingAuth: false });
     }
   },
 
@@ -45,12 +52,16 @@ export const useAuthStore = create((set, get) => ({
     set({ isLoggingIn: true });
     try {
       const res = await axiosInstance.post("/auth/login", data);
-      set({ authUser: res.data });
+      const { token, ...user } = res.data;
+      localStorage.setItem('jwt-token', token);
+      set({ authUser: user });
       toast.success("Logged in successfully");
       get().connectSocket(); // Connect to the socket after successful login
+      return true;
     } catch (error) {
       console.error("Error during login:", error);
-      toast.error(error.response?.data?.message || "Login failed. Please try again.");
+      toast.error(error.response?.data?.message || "Login failed");
+      return false;
     } finally {
       set({ isLoggingIn: false });
     }

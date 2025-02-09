@@ -4,6 +4,7 @@ import cloudinary from '../lib/cloudinary.js';
 import { generateToken } from '../lib/utils.js';
 import multer from 'multer';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import jwt from 'jsonwebtoken';  // Add this import
 
 // Configure multer for local storage
 const storage = multer.diskStorage({
@@ -59,39 +60,38 @@ export const signup = async (req, res) => {
 
 // Login controller
 export const login = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const user = await User.findOne({ email });
-    
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      return res.status(400).json({ message: "Invalid credentials." });
+    try {
+        const { email, password } = req.body;
+
+        if (!email || !password) {
+            return res.status(400).json({ message: "All fields are required" });
+        }
+
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(401).json({ message: "Invalid credentials" });
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(401).json({ message: "Invalid credentials" });
+        }
+
+        // Generate token
+        const token = generateToken(user._id, res);
+
+        // Send response
+        res.status(200).json({
+            _id: user._id,
+            fullName: user.fullName,
+            email: user.email,
+            profilePic: user.profilePic,
+            token
+        });
+    } catch (error) {
+        console.error("Login error:", error);
+        res.status(500).json({ message: "Server error" });
     }
-
-    // Generate JWT token
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-      expiresIn: '7d'
-    });
-
-    // Set HTTP-only cookie
-    res.cookie("jwt", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-    });
-
-    // Send response with token
-    res.status(200).json({
-      _id: user._id,
-      fullName: user.fullName,
-      email: user.email,
-      profilePic: user.profilePic,
-      token: token // Include token in response
-    });
-  } catch (error) {
-    console.error("Error in login controller:", error.message);
-    res.status(500).json({ message: "Internal server error." });
-  }
 };
 
 // Logout controller
@@ -128,14 +128,27 @@ export const updateProfile = async (req, res) => {
 
 
 // Check Auth controller
-export const checkAuth = (req, res) => {
-  try {
-    res.status(200).json(req.user);
-  } catch (error) {
-    console.error("Error in checkAuth controller:", error.message);
-    res.status(500).json({ message: "Internal server error." });
-  }
+export const checkAuth = async (req, res) => {
+    try {
+        const token = req.cookies.jwt;
+        if (!token) {
+            return res.status(401).json({ message: "No token found" });
+        }
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(decoded.userId).select("-password");
+        
+        if (!user) {
+            return res.status(401).json({ message: "User not found" });
+        }
+
+        res.status(200).json(user);
+    } catch (error) {
+        console.error("CheckAuth error:", error);
+        res.status(401).json({ message: "Not authorized" });
+    }
 };
+
 // Fetch all users
 export const getAllUsers = async (req, res) => {
   try {
