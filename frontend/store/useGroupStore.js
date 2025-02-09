@@ -40,16 +40,29 @@ export const useGroupStore = create((set) => ({
     }
   },
 
-  sendGroupMessage: async (groupId, message) => {
+  sendGroupMessage: async (groupId, text) => {
     try {
-      const { data } = await axiosInstance.post(`/messages/group/${groupId}`, { message });
+      if (!groupId || !text) {
+        throw new Error('Group ID and message text are required');
+      }
+
+      const { data } = await axiosInstance.post(
+        `/messages/group/${groupId}`,
+        { text },  // Send as an object with text property
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
       set(state => ({
         messages: [...state.messages, data]
       }));
       return data;
     } catch (error) {
-      toast.error('Failed to send message');
-      console.error(error);
+      console.error('Error sending group message:', error);
+      throw error;
     }
   },
 

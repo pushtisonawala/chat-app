@@ -5,6 +5,7 @@ import User from '../models/user.model.js';
 import { io } from '../lib/socket.js'; // Ensure the correct path to socket.js
 import cloudinary from '../lib/cloudinary.js';
 import { getRecieverSocketId } from '../lib/socket.js';
+import Group from '../models/group.model.js';  // Add this import
 
 // Configure multer for local storage
 const storage = multer.diskStorage({
@@ -113,24 +114,30 @@ export const getGroupMessages = async (req, res) => {
 export const sendGroupMessage = async (req, res) => {
     try {
         const { groupId } = req.params;
-        const { text } = req.body;
+        const { text } = req.body;  // Expect text in req.body
         const senderId = req.user._id;
+
+        console.log('Received group message:', { groupId, text, senderId });
+
+        if (!groupId || !text) {
+            return res.status(400).json({ error: "Group ID and message text are required" });
+        }
 
         const newMessage = new Message({
             senderId,
             groupId,
             text,
-            isGroupMessage: true,
-            image: req.file?.path
+            isGroupMessage: true
         });
 
         await newMessage.save();
-        await newMessage.populate('senderId', 'fullName email profilePic');
+        
+        const populatedMessage = await Message.findById(newMessage._id)
+            .populate('senderId', 'fullName email profilePic');
 
-        // Emit to group channel
-        io.to(`group_${groupId}`).emit('newGroupMessage', newMessage);
+        io.to(`group_${groupId}`).emit('newGroupMessage', populatedMessage);
+        res.status(201).json(populatedMessage);
 
-        res.status(201).json(newMessage);
     } catch (error) {
         console.error('Error in sendGroupMessage:', error);
         res.status(500).json({ error: "Failed to send message" });

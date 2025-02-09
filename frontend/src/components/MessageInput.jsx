@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { useChatStore } from "../../store/useChatStore";
 import { useGroupStore } from "../../store/useGroupStore";
 import { X, Image, Send } from "lucide-react";
+import toast from 'react-hot-toast';  // Add this import
 
 const MessageInput = ({ isGroup }) => {
     const [text, setText] = useState("");
@@ -26,25 +27,23 @@ const MessageInput = ({ isGroup }) => {
 
     const handleSendMessage = async (e) => {
         e.preventDefault();
-        if (!text.trim() && !imageFile) return;
-
-        const formData = new FormData(); // Create a FormData object
-        formData.append("text", text.trim()); // Append the text
-        if (imageFile) {
-            formData.append("image", imageFile); // Append the image file
-        }
+        if (!text.trim()) return;
 
         try {
             if (isGroup) {
-                await sendGroupMessage(formData);
+                const groupId = useGroupStore.getState().selectedGroup?._id;
+                if (!groupId) {
+                    toast.error('No group selected');
+                    return;
+                }
+                await sendGroupMessage(groupId, text.trim());  // Just pass the text directly
             } else {
-                await sendMessage(formData);
+                await sendMessage({ text: text.trim() });
             }
             setText("");
-            setImageFile(null);
-            if (fileInputRef.current) fileInputRef.current.value = "";
         } catch (error) {
-            console.error("Failed to send message", error);
+            console.error("Failed to send message:", error);
+            toast.error("Failed to send message");
         }
     };
 
