@@ -41,7 +41,8 @@ export const getMessages = async (req, res) => {
                 { senderId: myId, recieverId: userToChatId },
                 { senderId: userToChatId, recieverId: myId }
             ]
-        });
+        }).sort({ createdAt: 1 }); // Sort by creation time ascending (oldest first)
+
         res.status(200).json(messages);
     } catch (error) {
         console.log("error in getting msgs", error.message);
@@ -80,6 +81,59 @@ export const sendMessage = async (req, res) => {
     } catch (error) {
         console.log("Error in sending message:", error.message);
         res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+// Get group messages
+export const getGroupMessages = async (req, res) => {
+    try {
+        const { groupId } = req.params;
+        console.log('Fetching messages for group:', groupId);
+
+        if (!groupId) {
+            return res.status(400).json({ error: "Group ID is required" });
+        }
+
+        const messages = await Message.find({
+            groupId,
+            isGroupMessage: true
+        })
+        .populate('senderId', 'fullName email profilePic')
+        .sort({ createdAt: 1 }); // Sort by creation time ascending (oldest first)
+
+        console.log(`Found ${messages.length} messages for group ${groupId}`);
+        res.status(200).json(messages);
+    } catch (error) {
+        console.error('Error in getGroupMessages:', error);
+        res.status(500).json({ error: "Failed to fetch group messages" });
+    }
+};
+
+// Send a group message
+export const sendGroupMessage = async (req, res) => {
+    try {
+        const { groupId } = req.params;
+        const { text } = req.body;
+        const senderId = req.user._id;
+
+        const newMessage = new Message({
+            senderId,
+            groupId,
+            text,
+            isGroupMessage: true,
+            image: req.file?.path
+        });
+
+        await newMessage.save();
+        await newMessage.populate('senderId', 'fullName email profilePic');
+
+        // Emit to group channel
+        io.to(`group_${groupId}`).emit('newGroupMessage', newMessage);
+
+        res.status(201).json(newMessage);
+    } catch (error) {
+        console.error('Error in sendGroupMessage:', error);
+        res.status(500).json({ error: "Failed to send message" });
     }
 };
 
