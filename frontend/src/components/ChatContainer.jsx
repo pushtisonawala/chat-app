@@ -104,7 +104,7 @@ const ChatContainer = ({ isGroup }) => {
                   <img
                     src={isOwnMessage 
                       ? authUser.profilePic || "/avatar.jpg" 
-                      : selectedUser?.profilePic || "/avatar.jpg"}
+                      : message.senderId?.profilePic || "/avatar.jpg"}
                     alt="profile pic"
                   />
                 </div>

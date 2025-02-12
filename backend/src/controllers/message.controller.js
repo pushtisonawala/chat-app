@@ -91,18 +91,14 @@ export const getGroupMessages = async (req, res) => {
         const { groupId } = req.params;
         console.log('Fetching messages for group:', groupId);
 
-        if (!groupId) {
-            return res.status(400).json({ error: "Group ID is required" });
-        }
-
         const messages = await Message.find({
             groupId,
             isGroupMessage: true
         })
-        .populate('senderId', 'fullName email profilePic')
-        .sort({ createdAt: 1 }); // Sort by creation time ascending (oldest first)
+        .populate('senderId', 'fullName email profilePic') // Ensure sender info is populated
+        .sort({ createdAt: 1 });
 
-        console.log(`Found ${messages.length} messages for group ${groupId}`);
+        console.log('Populated messages:', messages);  // Debug log
         res.status(200).json(messages);
     } catch (error) {
         console.error('Error in getGroupMessages:', error);
@@ -114,14 +110,8 @@ export const getGroupMessages = async (req, res) => {
 export const sendGroupMessage = async (req, res) => {
     try {
         const { groupId } = req.params;
-        const { text } = req.body;  // Expect text in req.body
+        const { text } = req.body;
         const senderId = req.user._id;
-
-        console.log('Received group message:', { groupId, text, senderId });
-
-        if (!groupId || !text) {
-            return res.status(400).json({ error: "Group ID and message text are required" });
-        }
 
         const newMessage = new Message({
             senderId,
@@ -131,13 +121,20 @@ export const sendGroupMessage = async (req, res) => {
         });
 
         await newMessage.save();
-        
+
+        // Populate sender details
         const populatedMessage = await Message.findById(newMessage._id)
-            .populate('senderId', 'fullName email profilePic');
+            .populate({
+                path: 'senderId',
+                select: 'fullName email profilePic'
+            });
 
-        io.to(`group_${groupId}`).emit('newGroupMessage', populatedMessage);
+        console.log('Emitting populated message:', populatedMessage); // Debug log
+
+        // Broadcast to group
+        io.to(`group_${groupId}`).emit("receiveGroupMessage", populatedMessage);
+
         res.status(201).json(populatedMessage);
-
     } catch (error) {
         console.error('Error in sendGroupMessage:', error);
         res.status(500).json({ error: "Failed to send message" });

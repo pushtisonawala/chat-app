@@ -72,7 +72,7 @@ export const useGroupStore = create((set, get) => ({
   handleNewMessage: (message) => {
     const { selectedGroup, messages } = get();
     if (selectedGroup && message.groupId === selectedGroup._id) {
-      set({ messages: [...messages, message] });
+      set((state) => ({ messages: [...state.messages, message] }));
     }
   },
 
