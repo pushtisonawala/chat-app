@@ -8,7 +8,15 @@ import MessageInput from "./MessageInput";
 import { formatMessageTime } from "../lib/utils";
 
 const ChatContainer = ({ isGroup }) => {
-  const { messages: privateMessages, selectedUser, getMessages, isMessagesLoading, subscribeToMessages, unsubscribeFromMessages } = useChatStore();
+  const { 
+    messages: privateMessages, 
+    selectedUser, 
+    getMessages, 
+    isMessagesLoading, 
+    subscribeToMessages, 
+    unsubscribeFromMessages,
+    setMessages: setPrivateMessages  // Add this
+  } = useChatStore();
   const { messages: groupMessages, selectedGroup, fetchGroupMessages, handleNewMessage } = useGroupStore();
   const { authUser, socket } = useAuthStore();
   const messageEndRef = useRef(null);
@@ -19,18 +27,39 @@ const ChatContainer = ({ isGroup }) => {
   useEffect(() => {
     if (selectedUser?._id) {
       getMessages(selectedUser._id);
-
+      
       if (socket) {
-        subscribeToMessages();
-      } else {
-        console.error("Socket is not connected.");
+        // Listen for private messages
+        socket.on("newMessage", (message) => {
+          if (message.senderId === selectedUser._id) {
+            setPrivateMessages(prev => [...prev, message]);  // Use setPrivateMessages instead
+          }
+        });
       }
 
-      return () => unsubscribeFromMessages();
-    } else if (selectedGroup?._id) {
+      return () => {
+        if (socket) {
+          socket.off("newMessage");
+        }
+      };
+    } else if (selectedGroup?._id && socket) {
+      // Join group and listen for group messages
+      socket.emit('joinGroup', selectedGroup._id);
+      
+      socket.on('receiveGroupMessage', (message) => {
+        if (message.groupId === selectedGroup._id) {
+          handleNewMessage(message);
+        }
+      });
+
       fetchGroupMessages(selectedGroup._id);
+
+      return () => {
+        socket.emit('leaveGroup', selectedGroup._id);
+        socket.off('receiveGroupMessage');
+      };
     }
-  }, [selectedUser?._id, selectedGroup?._id, getMessages, fetchGroupMessages, subscribeToMessages, unsubscribeFromMessages, socket]);
+  }, [selectedUser?._id, selectedGroup?._id, socket]);
 
   useEffect(() => {
     if (messageEndRef.current && messages) {
@@ -90,14 +119,15 @@ const ChatContainer = ({ isGroup }) => {
     <div className="flex-1 flex flex-col overflow-auto">
       <ChatHeader />
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages?.map((message) => {
+        {messages?.map((message, index) => {  // Added index parameter
           const isOwnMessage = message.senderId?._id === authUser._id || message.senderId === authUser._id;
+          const isLastMessage = index === messages.length - 1;  // Check if last message
           
           return (
             <div
-              key={message._id}
+              key={`${message._id}-${index}`}  // Added index to ensure unique keys
               className={`chat ${isOwnMessage ? "chat-end" : "chat-start"}`}
-              ref={messageEndRef}
+              ref={isLastMessage ? messageEndRef : null}  // Only add ref to last message
             >
               <div className="chat-image avatar">
                 <div className="size-10 rounded-full border">

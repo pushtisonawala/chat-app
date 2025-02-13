@@ -78,4 +78,15 @@ sendMessage: async (messageData) => {
     get().subscribeToMessages();
   },
   setSelectedUser: (selectedUser) => set({ selectedUser }), // Fixed the function name and syntax
+
+  setMessages: (messages) => set({ messages }), // Make sure this exists
+  
+  // Or if you want to use a function
+  setMessages: (messageUpdater) => {
+    if (typeof messageUpdater === 'function') {
+      set(state => ({ messages: messageUpdater(state.messages) }));
+    } else {
+      set({ messages: messageUpdater });
+    }
+  },
 }));

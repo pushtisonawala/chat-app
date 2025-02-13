@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { axiosInstance } from '../src/lib/axios';
 import toast from 'react-hot-toast';
+import { useAuthStore } from './useAuthStore';  // Add this import
 
 export const useGroupStore = create((set, get) => ({
   groups: [],
@@ -50,19 +51,27 @@ export const useGroupStore = create((set, get) => ({
 
       const { data } = await axiosInstance.post(
         `/messages/group/${groupId}`,
-        { text },  // Send as an object with text property
-        {
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        }
+        { text }
       );
+
+      // Ensure message has a unique ID before adding to state
+      const messageWithId = {
+        ...data,
+        _id: data._id || Date.now().toString()  // Fallback ID if none exists
+      };
 
       // Update messages immediately
       set(state => ({
-        messages: [...state.messages, data]
+        messages: [...state.messages, messageWithId]
       }));
-      return data;
+
+      // Get socket from AuthStore
+      const { socket } = useAuthStore.getState();
+      if (socket) {
+        socket.emit('groupMessage', messageWithId);
+      }
+
+      return messageWithId;
     } catch (error) {
       console.error('Error sending group message:', error);
       throw error;
@@ -70,9 +79,11 @@ export const useGroupStore = create((set, get) => ({
   },
 
   handleNewMessage: (message) => {
-    const { selectedGroup, messages } = get();
-    if (selectedGroup && message.groupId === selectedGroup._id) {
-      set((state) => ({ messages: [...state.messages, message] }));
+    const { selectedGroup } = get();
+    if (selectedGroup?._id === message.groupId) {
+      set(state => ({
+        messages: [...state.messages, message]
+      }));
     }
   },
 
