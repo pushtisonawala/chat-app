@@ -38,7 +38,7 @@ export const upload = multer({
 export const createGroup = async (req, res) => {
   try {
     const { name, members } = req.body;
-    let groupProfilePic = "https://api.dicebear.com/7.x/initials/svg?seed=" + name;
+    let groupProfilePic = "https://i.pinimg.com/550x/7b/ea/e8/7beae8dce96a3422081fdc816459f579.jpg";
 
     if (req.file) {
       const result = await cloudinary.uploader.upload(req.file.path);

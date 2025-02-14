@@ -15,7 +15,7 @@ const groupSchema = new mongoose.Schema({
   },
   groupProfilePic: {
     type: String,
-    default: "https://api.dicebear.com/7.x/initials/svg?seed=group" // Default group avatar
+    default: "https://i.pinimg.com/550x/7b/ea/e8/7beae8dce96a3422081fdc816459f579.jpg"
   }
 }, { timestamps: true });
 
