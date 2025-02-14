@@ -98,14 +98,14 @@ const Sidebar = () => {
                                         alt={user.fullName} 
                                         className="size-10 object-cover rounded-full border border-zinc-800"
                                     />
-                                    {onlineUsers.includes(user._id) && (
-                                        <span className="absolute bottom-0 right-0 size-2.5 bg-green-500 rounded-full ring-2 ring-zinc-900" />
+                                    {onlineUsers?.includes(user._id) && (
+                                        <span className="absolute bottom-0 right-0 size-3 bg-green-500 rounded-full ring-2 ring-zinc-900" />
                                     )}
                                 </div>
                                 <div className="hidden lg:block text-left min-w-0">
                                     <div className="font-medium truncate text-zinc-300">{user.fullName}</div>
-                                    <div className="text-sm text-zinc-500">
-                                        {onlineUsers.includes(user._id) ? "Online" : "Offline"}
+                                    <div className={onlineUsers?.includes(user._id) ? "text-sm text-green-500 font-medium" : "text-sm text-zinc-500"}>
+                                        {onlineUsers?.includes(user._id) ? "Online" : "Offline"}
                                     </div>
                                 </div>
                             </button>

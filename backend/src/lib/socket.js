@@ -4,18 +4,15 @@ import express from "express";
 
 const app = express();
 const server = http.createServer(app);
-
 const io = new Server(server, {
   cors: {
-    origin: '*',  // Allow all origins in production for now
+    origin: '*',
     methods: ["GET", "POST"],
-    credentials: true,
+    credentials: true
   },
-  path: '/socket.io',
   transports: ['websocket', 'polling'],
   pingTimeout: 60000,
-  pingInterval: 25000,
-  maxHttpBufferSize: 1e8
+  pingInterval: 25000
 });
 
 const userSocketMap = {}; // Store users connected by their userId

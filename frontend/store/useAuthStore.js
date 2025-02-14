@@ -3,13 +3,8 @@ import { axiosInstance } from "../src/lib/axios";
 import toast from "react-hot-toast";
 import { io } from "socket.io-client";
 
-const BASE_URL = import.meta.env.VITE_API_URL;
-if (!BASE_URL) {
-  throw new Error('VITE_API_URL environment variable is not defined');
-}
+const BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:5001" : "/";
 
-// Remove trailing slash if present
-const normalizedBaseUrl = BASE_URL.endsWith('/') ? BASE_URL.slice(0, -1) : BASE_URL;
 
 export const useAuthStore = create((set, get) => ({
   authUser: null,
@@ -102,41 +97,26 @@ updateProfile: async (formData) => {
     const { authUser } = get();
     if (!authUser || get().socket?.connected) return;
 
-    const socketUrl = import.meta.env.MODE === 'development'
-      ? 'http://localhost:5001'
-      : 'https://chat-app-1-jb79.onrender.com';
-
-    console.log('Connecting to socket URL:', socketUrl);
-
-    const socket = io(socketUrl, {
-      reconnection: true,
-      reconnectionAttempts: Infinity,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      timeout: 20000,
-      autoConnect: true,
-      query: { userId: authUser._id },
-      transports: ['websocket', 'polling']
+    const socket = io(BASE_URL, {
+      transports: ["websocket"], 
+      query: { userId: authUser._id }, 
     });
 
-    socket.on('connect', () => {
-      console.log('Socket connected successfully:', socket.id);
+    socket.on("connect", () => {
+      console.log("Socket connected:", socket.id);
     });
 
-    socket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error);
+    socket.on("disconnect", () => {
+      console.log("Socket disconnected:", socket.id);
     });
 
-    socket.on('reconnect_attempt', (attempt) => {
-      console.log('Socket reconnection attempt:', attempt);
+    socket.on("getOnlineUsers", (userIds) => {
+      console.log("Received online users:", userIds); 
+      set({ onlineUsers: userIds });
     });
 
-    socket.on('disconnect', (reason) => {
-      console.log('Socket disconnected:', reason);
-      // Attempt to reconnect unless explicitly disconnected
-      if (reason === 'io server disconnect') {
-        socket.connect();
-      }
+    socket.on("connect_error", (err) => {
+      console.error("Socket connection error:", err.message);
     });
 
     set({ socket });
