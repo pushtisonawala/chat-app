@@ -3,8 +3,13 @@ import { axiosInstance } from "../src/lib/axios";
 import toast from "react-hot-toast";
 import { io } from "socket.io-client";
 
-const BASE_URL =  import.meta.env.VITE_API_URL;
+const BASE_URL = import.meta.env.VITE_API_URL;
+if (!BASE_URL) {
+  throw new Error('VITE_API_URL environment variable is not defined');
+}
 
+// Remove trailing slash if present
+const normalizedBaseUrl = BASE_URL.endsWith('/') ? BASE_URL.slice(0, -1) : BASE_URL;
 
 export const useAuthStore = create((set, get) => ({
   authUser: null,
@@ -97,20 +102,9 @@ updateProfile: async (formData) => {
     const { authUser } = get();
     if (!authUser || get().socket?.connected) return;
 
-    const socketUrl = import.meta.env.MODE === 'development'
-      ? 'http://localhost:5001'
-      : 'https://chat-app-1-jb79.onrender.com';
-
-    console.log('Connecting to socket URL:', socketUrl);
-
-    const socket = io(socketUrl, {
-      path: '/socket.io/',
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      timeout: 20000,
-      query: { userId: authUser._id }
+    const socket = io(BASE_URL, {
+      transports: ["websocket"], 
+      query: { userId: authUser._id }, 
     });
 
     socket.on('connect', () => {
