@@ -94,12 +94,12 @@ const ChatHeader = () => {
             <div className="p-2.5 border-b border-base-300">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="avatar">
-                            <div className="size-10 rounded-full relative bg-blue-500/10 flex items-center justify-center">
+                        <div className="avatar relative group">
+                            <div className="size-12 rounded-full relative overflow-hidden">
                                 <img
                                     src={getProfilePic()}
                                     alt="Profile"
-                                    className="w-12 h-12 rounded-full object-cover"
+                                    className="w-full h-full object-cover"
                                 />
                                 <input
                                     type="file"
@@ -110,9 +110,9 @@ const ChatHeader = () => {
                                 />
                                 <button
                                     onClick={() => fileInputRef.current?.click()}
-                                    className="absolute bottom-0 right-0 bg-blue-500 p-1 rounded-full hover:bg-blue-600 transition-colors"
+                                    className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
                                 >
-                                    <Camera size={14} className="text-white" />
+                                    <Camera className="text-white w-5 h-5" />
                                 </button>
                             </div>
                         </div>
