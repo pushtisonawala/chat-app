@@ -11,7 +11,10 @@ const ThinkingIndicator = () => (
   <div className="chat chat-start">
     <div className="chat-image avatar">
       <div className="size-10 rounded-full border">
-        <img src="https://api.dicebear.com/7.x/bottts/svg?seed=gemini&backgroundColor=b6e3f4" alt="Gemini" />
+        <img 
+          src="https://api.dicebear.com/7.x/bottts/svg?seed=gemini&backgroundColor=d1d5db&eyes=happy&mouth=smile" 
+          alt="Gemini"
+        />
       </div>
     </div>
     <div className="chat-header">
@@ -43,6 +46,29 @@ const ChatContainer = ({ isGroup }) => {
 
   const messages = selectedUser ? privateMessages : groupMessages;
   const currentChat = selectedUser || selectedGroup;
+
+  const getMessageProfile = (message, isOwnMessage) => {
+    if (message.isAIMessage) {
+      return "https://api.dicebear.com/7.x/bottts/svg?seed=gemini&backgroundColor=d1d5db&eyes=happy&mouth=smile";
+    }
+    
+    if (isGroup) {
+      return message.senderId?.profilePic || "/avatar.jpg";
+    }
+
+    if (isOwnMessage) {
+      return authUser?.profilePic || "/avatar.jpg";
+    }
+
+    return message.senderId?.profilePic || "/avatar.jpg";
+  };
+
+  const getSenderName = (message, isOwnMessage) => {
+    console.log('Message:', message); // Debug
+    if (isOwnMessage) return "You";
+    if (message.isAIMessage) return "Gemini AI";
+    return message.senderId?.fullName || "Unknown User";
+  };
 
   useEffect(() => {
     if (selectedUser?._id) {
@@ -144,21 +170,16 @@ const ChatContainer = ({ isGroup }) => {
               <div className="chat-image avatar">
                 <div className="size-10 rounded-full border">
                   <img
-                    src={isOwnMessage 
-                      ? authUser.profilePic || "/avatar.jpg" 
-                      : message.senderId?.profilePic || "/avatar.jpg"}
-                    alt="profile pic"
+                    src={getMessageProfile(message, isOwnMessage)}
+                    alt={message.isAIMessage ? "AI" : `${message.senderId?.fullName || 'User'}'s profile`}
+                    className="object-cover w-full h-full"
                   />
                 </div>
               </div>
-              <div className="chat-header">
-                {isGroup && (
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-sm">
-                      {isOwnMessage ? "You" : message.senderId?.fullName}
-                    </span>
-                  </div>
-                )}
+              <div className="chat-header flex items-center gap-2">
+                <span className="font-bold text-sm">
+                  {getSenderName(message, isOwnMessage)}
+                </span>
                 <time className="text-xs opacity-50">
                   {formatMessageTime(message.createdAt)}
                 </time>

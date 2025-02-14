@@ -44,12 +44,14 @@ export const getMessages = async (req, res) => {
                 { senderId: myId, recieverId: userToChatId },
                 { senderId: userToChatId, recieverId: myId }
             ]
-        }).sort({ createdAt: 1 }); // Sort by creation time ascending (oldest first)
+        })
+        .populate('senderId', 'fullName email profilePic')
+        .populate('recieverId', 'fullName email profilePic')
+        .sort({ createdAt: 1 });
 
         res.status(200).json(messages);
     } catch (error) {
-        console.log("error in getting msgs", error.message);
-        res.status(500).json({ error: "internal server error" });
+        res.status(500).json({ error: "Internal server error" });
     }
 };
 
@@ -74,13 +76,18 @@ export const sendMessage = async (req, res) => {
         });
         await newMessage.save();
 
+        // Populate the message before sending
+        const populatedMessage = await Message.findById(newMessage._id)
+            .populate('senderId', 'fullName email profilePic')
+            .populate('recieverId', 'fullName email profilePic');
+
         // Emit new message to the receiver's socket
         const recieverSocketId = getRecieverSocketId(recieverId);
         if (recieverSocketId) {
-            io.to(recieverSocketId).emit("newMessage", newMessage);
+            io.to(recieverSocketId).emit("newMessage", populatedMessage);
         }
 
-        res.status(201).json(newMessage); // Return the new message
+        res.status(201).json(populatedMessage); // Return the new message
     } catch (error) {
         console.log("Error in sending message:", error.message);
         res.status(500).json({ error: "Internal server error" });
@@ -91,20 +98,37 @@ export const sendMessage = async (req, res) => {
 export const getGroupMessages = async (req, res) => {
     try {
         const { groupId } = req.params;
-        console.log('Fetching messages for group:', groupId);
-
         const messages = await Message.find({
             groupId,
             isGroupMessage: true
         })
-        .populate('senderId', 'fullName email profilePic') // Ensure sender info is populated
-        .sort({ createdAt: 1 });
+        .populate({
+            path: 'senderId',
+            select: 'fullName email profilePic'
+        })
+        .sort({ createdAt: 1 })
+        .lean();
 
-        console.log('Populated messages:', messages);  // Debug log
-        res.status(200).json(messages);
+        // Log messages for debugging
+        console.log('Messages before processing:', messages);
+
+        const populatedMessages = messages.map(msg => {
+            if (msg.isAIMessage) {
+                return {
+                    ...msg,
+                    senderId: { ...AI_DEFAULTS }
+                };
+            }
+            return msg;
+        });
+
+        // Log messages after processing
+        console.log('Messages after processing:', populatedMessages);
+
+        res.status(200).json(populatedMessages);
     } catch (error) {
         console.error('Error in getGroupMessages:', error);
-        res.status(500).json({ error: "Failed to fetch group messages" });
+        res.status(500).json({ error: "Failed to fetch messages" });
     }
 };
 
