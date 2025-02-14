@@ -7,19 +7,15 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: process.env.NODE_ENV === 'production' 
-      ? ['https://chat-app-1-jb79.onrender.com', 'http://localhost:5173']
-      : '*',
+    origin: '*',  // Allow all origins in production for now
     methods: ["GET", "POST"],
-    credentials: true
+    credentials: true,
   },
-  path: '/socket.io/',
+  path: '/socket.io',
   transports: ['websocket', 'polling'],
   pingTimeout: 60000,
   pingInterval: 25000,
-  upgradeTimeout: 30000,
-  allowUpgrades: true,
-  cookie: false
+  maxHttpBufferSize: 1e8
 });
 
 const userSocketMap = {}; // Store users connected by their userId

@@ -15,7 +15,9 @@ const _dirname = path.resolve();
 
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://chat-app-1-jb79.onrender.com'
+  'http://localhost:5174',
+  'https://chat-app-1-jb79.onrender.com',
+  'https://chat-app-1-jb79.onrender.com/'
 ];
 
 app.use(express.json());
@@ -30,8 +32,9 @@ app.use(cors({
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-requested-with']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-requested-with', 'Access-Control-Allow-Origin'],
+  exposedHeaders: ['set-cookie']
 }));
 
 app.use("/api/auth", authRoutes);
@@ -73,6 +76,10 @@ const cleanup = () => {
 
 process.on('SIGINT', cleanup);
 process.on('SIGTERM', cleanup);
+
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
 
 // Start server
 startServer().catch(err => {

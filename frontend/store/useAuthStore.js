@@ -102,25 +102,41 @@ updateProfile: async (formData) => {
     const { authUser } = get();
     if (!authUser || get().socket?.connected) return;
 
-    const socket = io(BASE_URL, {
-      transports: ["websocket"], 
-      query: { userId: authUser._id }, 
+    const socketUrl = import.meta.env.MODE === 'development'
+      ? 'http://localhost:5001'
+      : 'https://chat-app-1-jb79.onrender.com';
+
+    console.log('Connecting to socket URL:', socketUrl);
+
+    const socket = io(socketUrl, {
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 20000,
+      autoConnect: true,
+      query: { userId: authUser._id },
+      transports: ['websocket', 'polling']
     });
 
     socket.on('connect', () => {
-      console.log('Socket connected:', socket.id);
+      console.log('Socket connected successfully:', socket.id);
     });
 
     socket.on('connect_error', (error) => {
-      console.error('Socket connection error:', {
-        message: error.message,
-        description: error.description,
-        type: error.type
-      });
+      console.error('Socket connection error:', error);
+    });
+
+    socket.on('reconnect_attempt', (attempt) => {
+      console.log('Socket reconnection attempt:', attempt);
     });
 
     socket.on('disconnect', (reason) => {
       console.log('Socket disconnected:', reason);
+      // Attempt to reconnect unless explicitly disconnected
+      if (reason === 'io server disconnect') {
+        socket.connect();
+      }
     });
 
     set({ socket });
