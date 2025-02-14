@@ -168,37 +168,31 @@ export const sendGroupMessage = async (req, res) => {
         const { groupId } = req.params;
         const roomId = `group_${groupId}`;
         const mentionsAI = /@gemini\b/i.test(req.body.text);
-        
-        // Extract user mentions with groupId context
-        const mentionedUserIds = await extractMentions(req.body.text, groupId);
 
-        // Create and save user message
-        const newMessage = new Message({
+        // First save the user's message
+        const userMessage = await Message.create({
             senderId: req.user._id,
             groupId,
             text: req.body.text,
             isGroupMessage: true,
             mentionedAI: mentionsAI,
-            mentions: mentionedUserIds
+            isAIMessage: false
         });
 
-        await newMessage.save();
-        const populatedMessage = await Message.findById(newMessage._id)
-            .populate('senderId', 'fullName email profilePic username')
-            .populate('mentions', 'fullName email profilePic username');
-
-        console.log('Populated message:', populatedMessage);
-
+        const populatedMessage = await userMessage.populate('senderId', 'fullName email profilePic username');
         io.to(roomId).emit("receiveGroupMessage", populatedMessage);
 
+        // Handle AI response if mentioned
         if (mentionsAI) {
-            io.to(roomId).emit("aiTyping", true);
-            
             try {
-                const aiQuery = req.body.text.replace(/@gemini\b/i, '').trim();
-                const aiResponse = await processAIMessage(aiQuery, []);
+                io.to(roomId).emit("aiTyping", true);
                 
-                const aiMessage = new Message({
+                // Clean the message and get AI response
+                const userText = req.body.text.replace(/@gemini/gi, '').trim();
+                const aiResponse = await processAIMessage(userText || "Hello!");
+
+                // Create and save AI message
+                const aiMessage = await Message.create({
                     senderId: AI_USER_ID,
                     groupId,
                     text: aiResponse,
@@ -206,17 +200,16 @@ export const sendGroupMessage = async (req, res) => {
                     isAIMessage: true
                 });
 
-                await aiMessage.save();
-
-                // Clear typing state before sending response
-                io.to(roomId).emit("aiTyping", false);
+                // Emit AI response
                 io.to(roomId).emit("receiveAIMessage", {
                     ...aiMessage.toObject(),
                     senderId: { _id: AI_USER_ID, ...AI_DEFAULTS }
                 });
             } catch (error) {
-                io.to(roomId).emit("aiTyping", false);
+                console.error('AI Error:', error);
                 io.to(roomId).emit("aiError", "Sorry, I couldn't process that request.");
+            } finally {
+                io.to(roomId).emit("aiTyping", false);
             }
         }
 
