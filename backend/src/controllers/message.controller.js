@@ -6,7 +6,7 @@ import { io } from '../lib/socket.js'; // Ensure the correct path to socket.js
 import cloudinary from '../lib/cloudinary.js';
 import { getRecieverSocketId } from '../lib/socket.js';
 import Group from '../models/group.model.js';  // Add this import
-import { processAIMessage } from '../services/gemini.service.js';
+import { processAIMessage, summarizeUnreadMessages } from '../services/gemini.service.js';
 import { AI_USER_ID, AI_DEFAULTS } from '../config/constants.js';
 
 // Configure multer for local storage
@@ -166,6 +166,41 @@ export const sendGroupMessage = async (req, res) => {
         console.error('Error in sendGroupMessage:', error);
         res.status(500).json({ error: "Failed to send message" });
     }
+};
+
+export const getUnreadSummary = async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    const { lastReadTime } = req.query;
+
+    // Get unread messages
+    const unreadMessages = await Message.find({
+      groupId,
+      isGroupMessage: true,
+      createdAt: { $gt: new Date(lastReadTime) }
+    }).populate('senderId', 'fullName')
+      .sort({ createdAt: 1 });
+
+    if (unreadMessages.length === 0) {
+      return res.json({ summary: "No unread messages" });
+    }
+
+    // Get summary from Gemini
+    const summary = await summarizeUnreadMessages(unreadMessages);
+    
+    res.json({
+      summary,
+      unreadCount: unreadMessages.length,
+      timespan: {
+        from: unreadMessages[0].createdAt,
+        to: unreadMessages[unreadMessages.length - 1].createdAt
+      }
+    });
+
+  } catch (error) {
+    console.error('Error getting unread summary:', error);
+    res.status(500).json({ error: "Failed to get message summary" });
+  }
 };
 
 // Export the multer instance for use in routes

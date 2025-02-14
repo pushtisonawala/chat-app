@@ -9,6 +9,7 @@ export const useGroupStore = create((set, get) => ({
   loading: false,
   error: null,
   messages: [],
+  lastRead: {},
 
   setSelectedGroup: (group) => set({ selectedGroup: group, messages: [] }),
 
@@ -85,5 +86,28 @@ export const useGroupStore = create((set, get) => ({
       console.error(error);
       set({ messages: [] });
     }
+  },
+
+  getUnreadSummary: async (groupId) => {
+    try {
+      const lastReadTime = get().lastRead[groupId] || new Date(0);
+      const { data } = await axiosInstance.get(
+        `/messages/group/${groupId}/summary?lastReadTime=${lastReadTime.toISOString()}`
+      );
+      return data;
+    } catch (error) {
+      console.error('Error getting summary:', error);
+      toast.error('Failed to get message summary');
+      return null;
+    }
+  },
+
+  updateLastRead: (groupId) => {
+    set(state => ({
+      lastRead: {
+        ...state.lastRead,
+        [groupId]: new Date()
+      }
+    }));
   }
 }));

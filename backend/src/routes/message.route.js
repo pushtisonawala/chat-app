@@ -5,7 +5,8 @@ import {
     getUsersForSidebar, 
     uploadMessageImage,
     getGroupMessages,
-    sendGroupMessage
+    sendGroupMessage,
+    getUnreadSummary
 } from '../controllers/message.controller.js';
 import { protectRoute } from '../middleware/auth.middleware.js';
 
@@ -19,5 +20,6 @@ router.post("/send/:id", protectRoute, uploadMessageImage, sendMessage);
 // Group message routes - make sure these are defined before other routes
 router.get("/group/:groupId", protectRoute, getGroupMessages);
 router.post("/group/:groupId", protectRoute, uploadMessageImage, sendGroupMessage);
+router.get("/group/:groupId/summary", protectRoute, getUnreadSummary);
 
 export default router;
