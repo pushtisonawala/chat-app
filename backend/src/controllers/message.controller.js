@@ -58,38 +58,28 @@ export const getMessages = async (req, res) => {
 // Send a message
 export const sendMessage = async (req, res) => {
     try {
-        const { text } = req.body; // Get text from the request body
-        const { id: recieverId } = req.params; // Get receiver ID from the request parameters
-        const senderId = req.user._id; // Get sender ID from the authenticated user
-        let imageUrl;
-
-        // Check if an image was uploaded
-        if (req.file) {
-            imageUrl = req.file.path; // Get the path of the uploaded image
-        }
+        const { text } = req.body;
+        const { id: receiverId } = req.params;
+        const senderId = req.user._id;
 
         const newMessage = new Message({
             senderId,
-            recieverId,
-            text,
-            image: imageUrl, // Save the image URL
+            recieverId: receiverId,
+            text
         });
         await newMessage.save();
 
-        // Populate the message before sending
         const populatedMessage = await Message.findById(newMessage._id)
             .populate('senderId', 'fullName email profilePic')
             .populate('recieverId', 'fullName email profilePic');
 
-        // Emit new message to the receiver's socket
-        const recieverSocketId = getRecieverSocketId(recieverId);
-        if (recieverSocketId) {
-            io.to(recieverSocketId).emit("newMessage", populatedMessage);
-        }
+        // Emit to both users
+        io.to(`user_${receiverId}`).emit("newMessage", populatedMessage);
+        io.to(`user_${senderId}`).emit("newMessage", populatedMessage);
 
-        res.status(201).json(populatedMessage); // Return the new message
+        res.status(201).json(populatedMessage);
     } catch (error) {
-        console.log("Error in sending message:", error.message);
+        console.error("Error in sendMessage:", error);
         res.status(500).json({ error: "Internal server error" });
     }
 };

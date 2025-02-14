@@ -33,24 +33,23 @@ export const useChatStore = create((set, get) => ({
       set({ isMessagesLoading: false });
     }
   },
-sendMessage: async (messageData) => {
-  const { selectedUser , messages } = get();
-  try {
-      const res = await axiosInstance.post(`/messages/send/${selectedUser ._id}`, messageData, {
-          headers: {
-              'Content-Type': 'multipart/form-data', // Set the content type for FormData
-          },
-      });
-      if (res && res.data) {
-          set({ messages: [...messages, res.data] });
-      } else {
-          console.error("Failed to receive valid response:", res);
-      }
-  } catch (error) {
-      console.error("Error sending message:", error);
-      toast.error(error.response?.data?.message || "Failed to send message");
-  }
-},
+
+  sendMessage: async ({ text }) => {
+    try {
+      const { selectedUser } = get();
+      if (!selectedUser?._id) return;
+
+      const { data } = await axiosInstance.post(`/messages/send/${selectedUser._id}`, { text });
+      set(state => ({
+        messages: [...state.messages, data]
+      }));
+      return data;
+    } catch (error) {
+      toast.error("Failed to send message");
+      throw error;
+    }
+  },
+
   subscribeToMessages: () => {
     const { selectedUser } = get();
     if (!selectedUser) return;
@@ -88,5 +87,11 @@ sendMessage: async (messageData) => {
     } else {
       set({ messages: messageUpdater });
     }
+  },
+
+  addMessage: (message) => {
+    set(state => ({
+      messages: [...state.messages, message]
+    }));
   },
 }));

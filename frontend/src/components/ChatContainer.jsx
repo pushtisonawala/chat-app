@@ -71,22 +71,22 @@ const ChatContainer = ({ isGroup }) => {
   };
 
   useEffect(() => {
-    if (selectedUser?._id) {
-      getMessages(selectedUser._id);
+    if (selectedUser?._id && socket) {
+      console.log('Setting up private message listener');
       
-      if (socket) {
-        // Listen for private messages
-        socket.on("newMessage", (message) => {
-          if (message.senderId === selectedUser._id) {
-            setPrivateMessages(prev => [...prev, message]);  // Use setPrivateMessages instead
-          }
-        });
-      }
+      const handlePrivateMessage = (message) => {
+        console.log('Received private message:', message);
+        if (message.senderId._id === selectedUser._id || message.senderId === selectedUser._id) {
+          setPrivateMessages(prev => [...prev, message]);
+          messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        }
+      };
+
+      socket.on("newMessage", handlePrivateMessage);
+      getMessages(selectedUser._id);
 
       return () => {
-        if (socket) {
-          socket.off("newMessage");
-        }
+        socket.off("newMessage", handlePrivateMessage);
       };
     }
   }, [selectedUser?._id, socket]);

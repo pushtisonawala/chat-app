@@ -31,9 +31,13 @@ io.on("connection", (socket) => {
 
   if (userId) {
     userSocketMap[userId] = socket.id;
-    io.emit("getOnlineUsers", Object.keys(userSocketMap)); // Emit online users to all clients
-
+    
+    // Join a personal room for private messages
     socket.join(`user_${userId}`);
+    
+    // Emit online users update
+    io.emit("getOnlineUsers", Object.keys(userSocketMap));
+
     socket.on("joinGroup", (groupId) => {
       socket.join(`group_${groupId}`);
       console.log(`User ${userId} joined group ${groupId}`);
@@ -43,25 +47,31 @@ io.on("connection", (socket) => {
       socket.leave(`group_${groupId}`);
       console.log(`User ${userId} left group ${groupId}`);
     });
-  }
 
-  // When a user disconnects, remove them from the map and notify others
-  socket.on("disconnect", () => {
-    console.log("User disconnected", socket.id);
-    if (userId) {
-      delete userSocketMap[userId]; // Remove user from the map
-      io.emit("getOnlineUsers", Object.keys(userSocketMap)); 
-      socket.leave(`user_${userId}`);
-    }
-  });
+    socket.on("disconnect", () => {
+      console.log("User disconnected", socket.id);
+      if (userId) {
+        delete userSocketMap[userId]; // Remove user from the map
+        io.emit("getOnlineUsers", Object.keys(userSocketMap)); 
+        socket.leave(`user_${userId}`);
+      }
+    });
+  }
 });
 
 export function getRecieverSocketId(userId) {
-  return userSocketMap[userId];
+  return userSocketMap[userId.toString()];
 }
 
 export const emitAIMessage = (groupId, message) => {
   io.to(`group_${groupId}`).emit("receiveAIMessage", message);
 };
+
+export function emitMessage(userId, message) {
+  const socketId = userSocketMap[userId.toString()];
+  if (socketId) {
+    io.to(socketId).emit("newMessage", message);
+  }
+}
 
 export { io, app, server };
