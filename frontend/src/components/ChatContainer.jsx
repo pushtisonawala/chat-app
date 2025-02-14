@@ -12,7 +12,7 @@ const ThinkingIndicator = () => (
     <div className="chat-image avatar">
       <div className="size-10 rounded-full border">
         <img 
-          src="https://api.dicebear.com/7.x/bottts/svg?seed=gemini&backgroundColor=d1d5db&eyes=happy&mouth=smile" 
+          src="https://imgcdn.stablediffusionweb.com/2024/9/15/8b8274f7-c2f8-46e9-9c66-cd6b4960f636.jpg" 
           alt="Gemini"
         />
       </div>
@@ -49,7 +49,7 @@ const ChatContainer = ({ isGroup }) => {
 
   const getMessageProfile = (message, isOwnMessage) => {
     if (message.isAIMessage) {
-      return "https://api.dicebear.com/7.x/bottts/svg?seed=gemini&backgroundColor=d1d5db&eyes=happy&mouth=smile";
+      return "https://imgcdn.stablediffusionweb.com/2024/9/15/8b8274f7-c2f8-46e9-9c66-cd6b4960f636.jpg";
     }
     
     if (isGroup) {

@@ -109,5 +109,16 @@ export const useGroupStore = create((set, get) => ({
         [groupId]: new Date()
       }
     }));
+  },
+
+  updateGroupProfile: (updatedGroup) => {
+    set(state => ({
+      groups: state.groups.map(group => 
+        group._id === updatedGroup._id ? updatedGroup : group
+      ),
+      selectedGroup: state.selectedGroup?._id === updatedGroup._id 
+        ? updatedGroup 
+        : state.selectedGroup
+    }));
   }
 }));

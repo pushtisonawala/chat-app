@@ -57,8 +57,16 @@ const Sidebar = () => {
                                 }`}
                             >
                                 <div className="relative mx-auto lg:mx-0">
-                                    <div className="size-10 rounded-full bg-blue-500/10 flex items-center justify-center">
-                                        <UsersRound className="size-6 text-blue-400" />
+                                    <div className="size-10 rounded-full bg-blue-500/10 flex items-center justify-center overflow-hidden">
+                                        {group.groupProfilePic ? (
+                                            <img
+                                                src={group.groupProfilePic}
+                                                alt={group.name}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        ) : (
+                                            <UsersRound className="size-6 text-blue-400" />
+                                        )}
                                     </div>
                                 </div>
                                 <span className="hidden lg:block truncate text-zinc-300">{group.name}</span>

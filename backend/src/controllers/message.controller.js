@@ -102,7 +102,6 @@ const extractMentions = async (text, groupId) => {
         ]
     });
 
-    // If some users weren't found, try matching by email prefix
     const foundUsernames = mentionedUsers.map(u => u.username);
     const missingUsernames = usernames.filter(u => !foundUsernames.includes(u));
     
@@ -188,14 +187,11 @@ export const sendGroupMessage = async (req, res) => {
             .populate('senderId', 'fullName email profilePic username')
             .populate('mentions', 'fullName email profilePic username');
 
-        // Debug log
         console.log('Populated message:', populatedMessage);
 
-        // Emit user message once
         io.to(roomId).emit("receiveGroupMessage", populatedMessage);
 
         if (mentionsAI) {
-            // Ensure typing state is emitted
             io.to(roomId).emit("aiTyping", true);
             
             try {

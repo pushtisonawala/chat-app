@@ -53,12 +53,12 @@ const MessageInput = ({ isGroup }) => {
     const filterMembers = (query) => {
         if (!isGroup) return [];
         
-        // Add Gemini AI to suggestions
+        // Add Gemini AI to suggestions with updated profile pic
         const geminiSuggestion = {
             _id: 'gemini',
             fullName: 'Gemini AI',
             username: 'gemini',
-            profilePic: 'https://api.dicebear.com/7.x/bottts/svg?seed=gemini'
+            profilePic: 'https://imgcdn.stablediffusionweb.com/2024/9/15/8b8274f7-c2f8-46e9-9c66-cd6b4960f636.jpg'
         };
 
         const members = selectedGroup?.members || [];

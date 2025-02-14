@@ -12,6 +12,10 @@ const groupSchema = new mongoose.Schema({
   admin: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
+  },
+  groupProfilePic: {
+    type: String,
+    default: "https://api.dicebear.com/7.x/initials/svg?seed=group" // Default group avatar
   }
 }, { timestamps: true });
 
