@@ -84,6 +84,49 @@ export const sendMessage = async (req, res) => {
     }
 };
 
+// Extract mentions from text
+const extractMentions = async (text, groupId) => {
+    const mentionRegex = /@([a-zA-Z0-9._]+)/g;
+    const mentions = text.match(mentionRegex) || [];
+    const usernames = mentions
+        .map(mention => mention.substring(1))
+        .filter(username => username !== 'gemini');
+    
+    if (usernames.length === 0) return [];
+    
+    // First try to find users by username
+    let mentionedUsers = await User.find({
+        $or: [
+            { username: { $in: usernames } },
+            { email: { $in: usernames.map(u => `${u}@example.com`) } }
+        ]
+    });
+
+    // If some users weren't found, try matching by email prefix
+    const foundUsernames = mentionedUsers.map(u => u.username);
+    const missingUsernames = usernames.filter(u => !foundUsernames.includes(u));
+    
+    if (missingUsernames.length > 0) {
+        const emailPrefixUsers = await User.find({
+            email: { 
+                $in: missingUsernames.map(u => new RegExp('^' + u + '@')) 
+            }
+        });
+        mentionedUsers = [...mentionedUsers, ...emailPrefixUsers];
+    }
+
+    // Verify users are in the group
+    const group = await Group.findById(groupId);
+    if (group) {
+        mentionedUsers = mentionedUsers.filter(user => 
+            group.members.includes(user._id)
+        );
+    }
+    
+    console.log('Found mentioned users:', mentionedUsers); // Debug log
+    return mentionedUsers.map(user => user._id);
+};
+
 // Get group messages
 export const getGroupMessages = async (req, res) => {
     try {
@@ -92,10 +135,8 @@ export const getGroupMessages = async (req, res) => {
             groupId,
             isGroupMessage: true
         })
-        .populate({
-            path: 'senderId',
-            select: 'fullName email profilePic'
-        })
+        .populate('senderId', 'fullName email profilePic username')
+        .populate('mentions', 'fullName email profilePic username')
         .sort({ createdAt: 1 })
         .lean();
 
@@ -128,6 +169,9 @@ export const sendGroupMessage = async (req, res) => {
         const { groupId } = req.params;
         const roomId = `group_${groupId}`;
         const mentionsAI = /@gemini\b/i.test(req.body.text);
+        
+        // Extract user mentions with groupId context
+        const mentionedUserIds = await extractMentions(req.body.text, groupId);
 
         // Create and save user message
         const newMessage = new Message({
@@ -135,12 +179,17 @@ export const sendGroupMessage = async (req, res) => {
             groupId,
             text: req.body.text,
             isGroupMessage: true,
-            mentionedAI: mentionsAI
+            mentionedAI: mentionsAI,
+            mentions: mentionedUserIds
         });
 
         await newMessage.save();
         const populatedMessage = await Message.findById(newMessage._id)
-            .populate('senderId', 'fullName email profilePic');
+            .populate('senderId', 'fullName email profilePic username')
+            .populate('mentions', 'fullName email profilePic username');
+
+        // Debug log
+        console.log('Populated message:', populatedMessage);
 
         // Emit user message once
         io.to(roomId).emit("receiveGroupMessage", populatedMessage);

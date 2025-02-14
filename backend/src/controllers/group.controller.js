@@ -31,13 +31,19 @@ export const getGroups = async (req, res) => {
 export const getGroupById = async (req, res) => {
   try {
     const group = await Group.findById(req.params.id)
-      .populate('members', 'fullName email profilePic')
-      .populate('admin', 'fullName email profilePic');
+      .populate('members', 'fullName email profilePic username')  // Add username to population
+      .populate('admin', 'fullName email profilePic username');   // Add username to population
+    
     if (!group) {
       return res.status(404).json({ error: 'Group not found' });
     }
+
+    // Log for debugging
+    console.log('Fetched group members:', group.members);
+    
     res.status(200).json(group);
   } catch (error) {
+    console.error('Error in getGroupById:', error);
     res.status(500).json({ error: error.message });
   }
 };

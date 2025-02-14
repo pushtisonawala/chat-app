@@ -29,6 +29,10 @@ const messageSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    mentions: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }],
     mentionedAI: {
         type: Boolean,
         default: false
