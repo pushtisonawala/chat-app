@@ -4,15 +4,22 @@ import express from "express";
 
 const app = express();
 const server = http.createServer(app);
+
 const io = new Server(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || "*",
+    origin: process.env.NODE_ENV === 'production' 
+      ? ['https://chat-app-1-jb79.onrender.com', 'http://localhost:5173']
+      : '*',
     methods: ["GET", "POST"],
-    credentials: true,
-    allowEIO3: true
+    credentials: true
   },
+  path: '/socket.io/',
   transports: ['websocket', 'polling'],
-  path: '/socket.io/'
+  pingTimeout: 60000,
+  pingInterval: 25000,
+  upgradeTimeout: 30000,
+  allowUpgrades: true,
+  cookie: false
 });
 
 const userSocketMap = {}; // Store users connected by their userId

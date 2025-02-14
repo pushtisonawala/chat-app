@@ -97,26 +97,36 @@ updateProfile: async (formData) => {
     const { authUser } = get();
     if (!authUser || get().socket?.connected) return;
 
-    const socket = io(BASE_URL, {
-      transports: ["websocket"], 
-      query: { userId: authUser._id }, 
+    const socketUrl = import.meta.env.MODE === 'development'
+      ? 'http://localhost:5001'
+      : 'https://chat-app-1-jb79.onrender.com';
+
+    console.log('Connecting to socket URL:', socketUrl);
+
+    const socket = io(socketUrl, {
+      path: '/socket.io/',
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      timeout: 20000,
+      query: { userId: authUser._id }
     });
 
-    socket.on("connect", () => {
-      console.log("Socket connected:", socket.id);
+    socket.on('connect', () => {
+      console.log('Socket connected:', socket.id);
     });
 
-    socket.on("disconnect", () => {
-      console.log("Socket disconnected:", socket.id);
+    socket.on('connect_error', (error) => {
+      console.error('Socket connection error:', {
+        message: error.message,
+        description: error.description,
+        type: error.type
+      });
     });
 
-    socket.on("getOnlineUsers", (userIds) => {
-      console.log("Received online users:", userIds); 
-      set({ onlineUsers: userIds });
-    });
-
-    socket.on("connect_error", (err) => {
-      console.error("Socket connection error:", err.message);
+    socket.on('disconnect', (reason) => {
+      console.log('Socket disconnected:', reason);
     });
 
     set({ socket });

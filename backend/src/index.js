@@ -14,36 +14,24 @@ dotenv.config();
 const _dirname = path.resolve();
 
 const allowedOrigins = [
-    'http://localhost:5173',
-    'http://localhost:5175',
-    'https://chat-app-1-jb79.onrender.com',
-    'https://chat-app-1-jb79.onrender.com/',
-    process.env.FRONTEND_URL,
-    '*'
+  'http://localhost:5173',
+  'https://chat-app-1-jb79.onrender.com'
 ];
 
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-    origin: function(origin, callback) {
-        // Allow requests with no origin (like mobile apps)
-        if (!origin) {
-            return callback(null, true);
-        }
-
-        // Remove trailing slashes for comparison
-        const normalizedOrigin = origin.replace(/\/$/, '');
-        
-        if (allowedOrigins.includes('*') || allowedOrigins.includes(normalizedOrigin)) {
-            callback(null, true);
-        } else {
-            console.log('Blocked origin:', origin);
-            callback(null, true); // Allow all origins in development
-        }
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-requested-with']
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log('Blocked origin:', origin);
+      callback(null, true); // Allow in production for now
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-requested-with']
 }));
 
 app.use("/api/auth", authRoutes);
