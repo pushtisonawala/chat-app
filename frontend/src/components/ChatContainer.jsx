@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useChatStore } from "../../store/useChatStore";
 import { useGroupStore } from "../../store/useGroupStore";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -7,7 +7,27 @@ import MessageSkeleton from "./skeletons/MessageSkeleton";
 import MessageInput from "./MessageInput";
 import { formatMessageTime } from "../lib/utils";
 
+const ThinkingIndicator = () => (
+  <div className="chat chat-start">
+    <div className="chat-image avatar">
+      <div className="size-10 rounded-full border">
+        <img src="https://api.dicebear.com/7.x/bottts/svg?seed=gemini&backgroundColor=b6e3f4" alt="Gemini" />
+      </div>
+    </div>
+    <div className="chat-header">
+      <span className="font-bold text-sm">Gemini AI</span>
+    </div>
+    <div className="chat-bubble">
+      <div className="flex items-center gap-2">
+        <span>Thinking</span>
+        <span className="loading loading-dots loading-md"></span>
+      </div>
+    </div>
+  </div>
+);
+
 const ChatContainer = ({ isGroup }) => {
+  const [isAITyping, setIsAITyping] = useState(false);
   const { 
     messages: privateMessages, 
     selectedUser, 
@@ -42,24 +62,38 @@ const ChatContainer = ({ isGroup }) => {
           socket.off("newMessage");
         }
       };
-    } else if (selectedGroup?._id && socket) {
-      // Join group and listen for group messages
-      socket.emit('joinGroup', selectedGroup._id);
-      
-      socket.on('receiveGroupMessage', (message) => {
-        if (message.groupId === selectedGroup._id) {
-          handleNewMessage(message);
-        }
-      });
+    }
+  }, [selectedUser?._id, socket]);
 
+  // Single socket effect for handling all group messages
+  useEffect(() => {
+    if (selectedGroup?._id && socket) {
+      const handleMessage = (message, type = 'normal') => {
+        if (message.groupId === selectedGroup._id) {
+          handleNewMessage(type === 'ai' ? { ...message, isAIMessage: true } : message);
+          messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        }
+      };
+
+      socket.emit('joinGroup', selectedGroup._id);
       fetchGroupMessages(selectedGroup._id);
+
+      // Set up single handlers for all message types
+      socket.on('receiveGroupMessage', msg => handleMessage(msg));
+      socket.on('receiveAIMessage', msg => handleMessage(msg, 'ai'));
+      socket.on('aiTyping', (typing) => {
+        console.log('AI typing status:', typing); // Debug log
+        setIsAITyping(typing);
+      });
 
       return () => {
         socket.emit('leaveGroup', selectedGroup._id);
-        socket.off('receiveGroupMessage');
+        ['receiveGroupMessage', 'receiveAIMessage', 'aiTyping'].forEach(event => {
+          socket.off(event);
+        });
       };
     }
-  }, [selectedUser?._id, selectedGroup?._id, socket]);
+  }, [selectedGroup?._id, socket]);
 
   useEffect(() => {
     if (messageEndRef.current && messages) {
@@ -73,28 +107,6 @@ const ChatContainer = ({ isGroup }) => {
       useAuthStore.getState().connectSocket();
     }
   }, [socket]);
-
-  useEffect(() => {
-    if (isGroup && selectedGroup && socket) {
-      // Join the group room when selected
-      socket.emit('joinGroup', selectedGroup._id);
-
-      // Listen for new messages
-      socket.on('newGroupMessage', handleNewMessage);
-
-      return () => {
-        // Leave the group room when deselected
-        socket.emit('leaveGroup', selectedGroup._id);
-        socket.off('newGroupMessage');
-      };
-    }
-  }, [selectedGroup, socket, isGroup]);
-
-  useEffect(() => {
-    if (isGroup && selectedGroup?._id) {
-      fetchGroupMessages(selectedGroup._id);
-    }
-  }, [selectedGroup?._id]);
 
   if (isMessagesLoading) {
     return (
@@ -157,8 +169,13 @@ const ChatContainer = ({ isGroup }) => {
             </div>
           );
         })}
+        {isAITyping && <ThinkingIndicator />}
       </div>
-      <MessageInput isGroup={!!selectedGroup} />
+      <MessageInput 
+        isGroup={!!selectedGroup} 
+        disabled={isAITyping}
+        placeholder={isGroup ? "Type @gemini followed by your question" : "Type a message..."}
+      />
     </div>
   );
 };

@@ -45,46 +45,35 @@ export const useGroupStore = create((set, get) => ({
 
   sendGroupMessage: async (groupId, text) => {
     try {
-      if (!groupId || !text) {
-        throw new Error('Group ID and message text are required');
-      }
-
-      const { data } = await axiosInstance.post(
-        `/messages/group/${groupId}`,
-        { text }
-      );
-
-      // Ensure message has a unique ID before adding to state
-      const messageWithId = {
-        ...data,
-        _id: data._id || Date.now().toString()  // Fallback ID if none exists
-      };
-
-      // Update messages immediately
-      set(state => ({
-        messages: [...state.messages, messageWithId]
-      }));
-
-      // Get socket from AuthStore
-      const { socket } = useAuthStore.getState();
-      if (socket) {
-        socket.emit('groupMessage', messageWithId);
-      }
-
-      return messageWithId;
+      const { data } = await axiosInstance.post(`/messages/group/${groupId}`, { text });
+      return data;
     } catch (error) {
-      console.error('Error sending group message:', error);
+      toast.error('Failed to send message');
       throw error;
     }
   },
 
   handleNewMessage: (message) => {
-    const { selectedGroup } = get();
-    if (selectedGroup?._id === message.groupId) {
-      set(state => ({
-        messages: [...state.messages, message]
-      }));
-    }
+    set(state => {
+      // Prevent duplicate messages with strict checking
+      const isDuplicate = state.messages?.some(m => 
+        m._id === message._id || // Same ID check
+        (m.text === message.text && // Content check
+         m.senderId?._id === message.senderId?._id && // Sender check
+         Math.abs(new Date(m.createdAt) - new Date(message.createdAt)) < 2000) // Time check (2 second window)
+      );
+
+      if (isDuplicate) {
+        return state; // Return unchanged state if duplicate
+      }
+
+      // Add new message and maintain order
+      const updatedMessages = [...(state.messages || []), message].sort(
+        (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+      );
+
+      return { messages: updatedMessages };
+    });
   },
 
   fetchGroupMessages: async (groupId) => {

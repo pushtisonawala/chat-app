@@ -4,7 +4,9 @@ const messageSchema = new mongoose.Schema({
     senderId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true
+        required: function() {
+            return !this.isAIMessage; // senderId only required for non-AI messages
+        }
     },
     recieverId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -20,6 +22,14 @@ const messageSchema = new mongoose.Schema({
     },
     image: String,
     isGroupMessage: {
+        type: Boolean,
+        default: false
+    },
+    isAIMessage: {
+        type: Boolean,
+        default: false
+    },
+    mentionedAI: {
         type: Boolean,
         default: false
     }

@@ -6,6 +6,8 @@ import { io } from '../lib/socket.js'; // Ensure the correct path to socket.js
 import cloudinary from '../lib/cloudinary.js';
 import { getRecieverSocketId } from '../lib/socket.js';
 import Group from '../models/group.model.js';  // Add this import
+import { processAIMessage } from '../services/gemini.service.js';
+import { AI_USER_ID, AI_DEFAULTS } from '../config/constants.js';
 
 // Configure multer for local storage
 const storage = multer.diskStorage({
@@ -110,29 +112,54 @@ export const getGroupMessages = async (req, res) => {
 export const sendGroupMessage = async (req, res) => {
     try {
         const { groupId } = req.params;
-        const { text } = req.body;
-        const senderId = req.user._id;
+        const roomId = `group_${groupId}`;
+        const mentionsAI = /@gemini\b/i.test(req.body.text);
 
+        // Create and save user message
         const newMessage = new Message({
-            senderId,
+            senderId: req.user._id,
             groupId,
-            text,
-            isGroupMessage: true
+            text: req.body.text,
+            isGroupMessage: true,
+            mentionedAI: mentionsAI
         });
 
         await newMessage.save();
-
-        // Populate sender details
         const populatedMessage = await Message.findById(newMessage._id)
-            .populate({
-                path: 'senderId',
-                select: 'fullName email profilePic'
-            });
+            .populate('senderId', 'fullName email profilePic');
 
-        console.log('Emitting populated message:', populatedMessage); // Debug log
+        // Emit user message once
+        io.to(roomId).emit("receiveGroupMessage", populatedMessage);
 
-        // Broadcast to group
-        io.to(`group_${groupId}`).emit("receiveGroupMessage", populatedMessage);
+        if (mentionsAI) {
+            // Ensure typing state is emitted
+            io.to(roomId).emit("aiTyping", true);
+            
+            try {
+                const aiQuery = req.body.text.replace(/@gemini\b/i, '').trim();
+                const aiResponse = await processAIMessage(aiQuery, []);
+                
+                const aiMessage = new Message({
+                    senderId: AI_USER_ID,
+                    groupId,
+                    text: aiResponse,
+                    isGroupMessage: true,
+                    isAIMessage: true
+                });
+
+                await aiMessage.save();
+
+                // Clear typing state before sending response
+                io.to(roomId).emit("aiTyping", false);
+                io.to(roomId).emit("receiveAIMessage", {
+                    ...aiMessage.toObject(),
+                    senderId: { _id: AI_USER_ID, ...AI_DEFAULTS }
+                });
+            } catch (error) {
+                io.to(roomId).emit("aiTyping", false);
+                io.to(roomId).emit("aiError", "Sorry, I couldn't process that request.");
+            }
+        }
 
         res.status(201).json(populatedMessage);
     } catch (error) {
