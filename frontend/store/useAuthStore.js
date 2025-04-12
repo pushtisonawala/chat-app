@@ -97,9 +97,13 @@ updateProfile: async (formData) => {
     const { authUser } = get();
     if (!authUser || get().socket?.connected) return;
 
-    const socket = io(BASE_URL, {
-      transports: ["websocket"], 
-      query: { userId: authUser._id }, 
+    const socketURL = process.env.NODE_ENV === 'production'
+      ? 'https://chat-app-1-jb79.onrender.com'  // Your deployed backend URL
+      : 'http://localhost:5001';
+
+    const socket = io(socketURL, {
+      transports: ["websocket"],
+      query: { userId: authUser._id },
     });
 
     socket.on("connect", () => {

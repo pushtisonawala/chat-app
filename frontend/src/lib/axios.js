@@ -1,8 +1,12 @@
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
+const baseURL = process.env.NODE_ENV === 'production' 
+  ? 'https://chat-app-1-jb79.onrender.com/api'  // Your deployed backend URL
+  : 'http://localhost:5001/api';
+
 const axiosInstance = axios.create({
-    baseURL: import.meta.env.MODE === "development" ? "http://localhost:5001/api" : "/api",
+    baseURL,
     withCredentials: true,
     headers: {
         'Content-Type': 'application/json'
