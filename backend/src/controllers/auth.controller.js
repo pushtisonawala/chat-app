@@ -130,19 +130,8 @@ export const updateProfile = async (req, res) => {
 // Check Auth controller
 export const checkAuth = async (req, res) => {
     try {
-        const token = req.cookies.jwt;
-        if (!token) {
-            return res.status(401).json({ message: "No token found" });
-        }
-
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const user = await User.findById(decoded.userId).select("-password");
-        
-        if (!user) {
-            return res.status(401).json({ message: "User not found" });
-        }
-
-        res.status(200).json(user);
+        // User is already authenticated via protectRoute middleware
+        res.status(200).json(req.user);
     } catch (error) {
         console.error("CheckAuth error:", error);
         res.status(401).json({ message: "Not authorized" });

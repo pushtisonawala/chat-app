@@ -17,19 +17,11 @@ export const useAuthStore = create((set, get) => ({
 
   checkAuth: async () => {
     try {
-      const token = localStorage.getItem('jwt-token');
-      if (!token) {
-        set({ authUser: null, isCheckingAuth: false });
-        return;
-      }
-
-      const res = await axiosInstance.get("/auth/check", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await axiosInstance.get("/auth/check");
       set({ authUser: res.data, isCheckingAuth: false });
+      get().connectSocket();
     } catch (error) {
       console.error("Error in checkAuth:", error);
-      localStorage.removeItem('jwt-token');
       set({ authUser: null, isCheckingAuth: false });
     }
   },
@@ -52,9 +44,7 @@ export const useAuthStore = create((set, get) => ({
     set({ isLoggingIn: true });
     try {
       const res = await axiosInstance.post("/auth/login", data);
-      const { token, ...user } = res.data;
-      localStorage.setItem('jwt-token', token);
-      set({ authUser: user });
+      set({ authUser: res.data });
       toast.success("Logged in successfully");
       get().connectSocket(); // Connect to the socket after successful login
       return true;
